@@ -36,6 +36,13 @@ static void SystemClock_Config(void);
 
 /* Private functions ---------------------------------------------------------*/
 
+void _exit(int asdf)
+{
+  (void)asdf;
+  while (1)
+    ;
+}
+
 /**
   * @brief  Main program
   * @param  None

@@ -1,1 +1,4 @@
 build/
+arm-gnu-toolchain-*-arm-none-eabi.tar.xz
+arm-gnu-toolchain-*-arm-none-eabi/
+.vscode

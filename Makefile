@@ -1,5 +1,6 @@
-CC=~/zephyr-sdk-1.0.1/gnu/arm-zephyr-eabi/bin/arm-zephyr-eabi-gcc
-SIZE=~/zephyr-sdk-1.0.1/gnu/arm-zephyr-eabi/bin/arm-zephyr-eabi-size
+TOOLCHAIN_DIR=arm-gnu-toolchain-15.2.rel1-x86_64-arm-none-eabi/bin/
+CC=$(TOOLCHAIN_DIR)/arm-none-eabi-gcc
+SIZE=$(TOOLCHAIN_DIR)/arm-none-eabi-size
 
 INCLUDE_DIR=include
 CPPFLAGS=\
@@ -10,8 +11,8 @@ CPPFLAGS=\
 	-Istm32-cube/Drivers/CMSIS/Device/ST/STM32G4xx/Include \
 	-Istm32-cube/Drivers/BSP/STM32G474E-EVAL
 
-CFLAGS=-mcpu=cortex-m4 -Wall -Wextra -Werror
-LDFLAGS=-Wl,-Tstm32-cube/Projects/STM32G474E-EVAL/Templates/STM32CubeIDE/STM32G474RETX_FLASH.ld
+CFLAGS=-mcpu=cortex-m4 -mfloat-abi=hard -Wall -Wextra -Werror -g -Og
+LDFLAGS=-Wl,-Tsrc/STM32G474CCTX_FLASH.ld --specs=nano.specs --specs=nosys.specs
 
 BUILDDIR=build
 
@@ -40,5 +41,33 @@ $(BUILDDIR)/%.o: %.c
 
 $(BUILDDIR)/application.elf: $(OBJS)
 	@echo LD $@
-	@$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^
+	@mkdir -p $(dir $@)
+	@$(CC) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS) -o $@ $^
 	$(SIZE) $@
+
+flash: flash-stm32cubeprogrammer
+flash-stm32cubeprogrammer: $(BUILDDIR)/application.elf
+	~/STMicroelectronics/STM32Cube/STM32CubeProgrammer/bin/STM32_Programmer_CLI \
+		--connect port=swd reset=HWrst --download $^ --start
+
+flash-openocd: $(BUILDDIR)/application.elf
+	openocd -f interface/stlink-v2.cfg \
+		-f board/st_nucleo_g4.cfg \
+		-c "init" -c "reset init" \
+		-c "flash write_image erase $<" \
+		-c "reset" \
+		-c "shutdown"
+
+gdbserver:
+	openocd \
+		-f board/st_nucleo_g4.cfg \
+		-c "tcl_port 6333" -c "telnet_port 4444" -c "gdb_port 3333"
+
+gdb: $(BUILDDIR)/application.elf
+	$(TOOLCHAIN_DIR)/arm-none-eabi-gdb $^ -ex "target remote :3333"
+
+arm-gnu-toolchain-15.2.rel1-x86_64-arm-none-eabi.tar.xz:
+	wget https://developer.arm.com/-/media/Files/downloads/gnu/15.2.rel1/binrel/arm-gnu-toolchain-15.2.rel1-x86_64-arm-none-eabi.tar.xz
+
+install-toolchain: arm-gnu-toolchain-15.2.rel1-x86_64-arm-none-eabi.tar.xz
+	tar xf arm-gnu-toolchain-15.2.rel1-x86_64-arm-none-eabi.tar.xz
