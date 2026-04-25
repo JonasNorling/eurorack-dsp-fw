@@ -19,7 +19,7 @@
   */
 
 /* Includes ------------------------------------------------------------------*/
-#include "main.h"
+#include "stm32g4xx_hal.h"
 #include "stm32g4xx_it.h"
 
 /** @addtogroup STM32G4xx_HAL_Examples
