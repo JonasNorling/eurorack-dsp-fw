@@ -17,6 +17,7 @@ LDFLAGS=-Wl,-Tsrc/STM32G474CCTX_FLASH.ld --specs=nano.specs --specs=nosys.specs
 BUILDDIR=build
 
 SRCS += src/main.c
+SRCS += src/serial_log.c
 SRCS += src/system_stm32g4xx.c
 SRCS += src/stm32g4xx_it.c
 SRCS += stm32-cube/Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal.c

@@ -1,6 +1,10 @@
 #include <stdint.h>
+#include <stdio.h>
+#include <unistd.h>
+
 #include "stm32g4xx_hal.h"
 #include "utils.h"
+#include "serial_log.h"
 
 static void SystemClock_Config(void);
 
@@ -27,9 +31,9 @@ static const struct {
     [PIN_UART_RX] = {GPIOB, {.Pin=GPIO_PIN_7, .Mode=GPIO_MODE_AF_PP, .Alternate=GPIO_AF7_USART1}},
 };
 
+
 int main(void)
 {
-    HAL_StatusTypeDef ret;
     HAL_Init();
     SystemClock_Config();
     
@@ -42,38 +46,8 @@ int main(void)
         HAL_GPIO_Init(pin_config[i].port, &pin_config[i].init);
     }
     
-    // Configure USART1 as "console"
-    static const RCC_PeriphCLKInitTypeDef usart1_pclock = {
-        .PeriphClockSelection = RCC_PERIPHCLK_USART1,
-        .Usart1ClockSelection = RCC_USART1CLKSOURCE_PCLK2,
-    };
-    if (HAL_RCCEx_PeriphCLKConfig(&usart1_pclock) != HAL_OK) {
-        while (1)
-            ;
-    }
-    __HAL_RCC_USART1_CLK_ENABLE();
-    USART_HandleTypeDef usart = {
-        .Instance = USART1,
-        .Init = {
-            .BaudRate = 115200,
-            .WordLength = UART_WORDLENGTH_8B,
-            .StopBits = UART_STOPBITS_1,
-            .Parity = UART_PARITY_NONE,
-            .ClockPrescaler = UART_PRESCALER_DIV1,
-            .Mode = USART_MODE_TX_RX,
-        },
-    };
-    ret = HAL_USART_Init(&usart);
-    if (ret != HAL_OK) {
-        while (1)
-            ;
-    }
-
-    ret = HAL_USART_Transmit(&usart, (void*)"Hej!\n", 5, 100);
-    if (ret != HAL_OK) {
-        while (1)
-            ;
-    }
+    log_init();
+    printf("***** Starting up *****\r\n");
 
     while (1) {
         uint32_t t0 = HAL_GetTick();
@@ -84,6 +58,8 @@ int main(void)
         while (HAL_GetTick() < t0 + 100)
         ;
         HAL_GPIO_WritePin(pin_config[PIN_LED0].port, pin_config[PIN_LED0].init.Pin, GPIO_PIN_RESET);
+        printf(".");
+        fflush(0);
     }
 }
 
