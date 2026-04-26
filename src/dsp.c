@@ -1,6 +1,7 @@
 #include "dsp.h"
 #include "audio.h"
 #include "utils.h"
+#include "audio_util.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -39,8 +40,8 @@ void dsp_do(const frame_t * const restrict in, frame_t * const restrict out)
 {
     for (int i = 0; i < FRAMES_PER_BLOCK; i++) {
         update_statistics(&in_stats, in[i]);
-        out[i].s[0] = in[i].s[0];
-        out[i].s[1] = in[i].s[1];
+        out[i].s[0] = saturate_tube(in[i].s[0]);
+        out[i].s[1] = saturate_tube(in[i].s[1]);
         update_statistics(&out_stats, out[i]);
     }
 }

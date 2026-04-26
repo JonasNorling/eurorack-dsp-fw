@@ -28,6 +28,12 @@ int main(void)
         printf("Error: audio streaming failed\r\n");
     }
 
+    // Enable cycle counter in DWT
+    CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
+    ITM->LAR = 0xC5ACCE55;
+    DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
+    DWT->CYCCNT = 0;
+
     while (1) {
         const uint32_t t = HAL_GetTick();
 
@@ -35,6 +41,7 @@ int main(void)
             ;
         gpio_toggle(PIN_LED0);
         dsp_dump_stats();
+        audio_dump_stats();
     }
 }
 
