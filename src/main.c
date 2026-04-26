@@ -5,6 +5,7 @@
 #include "stm32g4xx_hal.h"
 #include "utils.h"
 #include "serial_log.h"
+#include "audio_codec.h"
 
 static void SystemClock_Config(void);
 
@@ -16,6 +17,11 @@ enum pin {
     PIN_GPIO4,
     PIN_UART_TX,
     PIN_UART_RX,
+    I2S_MCLK,
+    I2S_BCLK,
+    I2S_LRCLK,
+    I2S_DOUT,
+    I2S_DIN,
 };
 
 static const struct {
@@ -29,6 +35,11 @@ static const struct {
     [PIN_GPIO4] = {GPIOB, {.Pin=GPIO_PIN_9, .Mode=GPIO_MODE_OUTPUT_PP}},
     [PIN_UART_TX] = {GPIOB, {.Pin=GPIO_PIN_6, .Mode=GPIO_MODE_AF_PP, .Alternate=GPIO_AF7_USART1}},
     [PIN_UART_RX] = {GPIOB, {.Pin=GPIO_PIN_7, .Mode=GPIO_MODE_AF_PP, .Alternate=GPIO_AF7_USART1}},
+    [I2S_MCLK] = {GPIOA, {.Pin=GPIO_PIN_3, .Mode=GPIO_MODE_AF_PP, .Alternate=GPIO_AF13_SAI1, .Speed=GPIO_SPEED_FREQ_VERY_HIGH}},
+    [I2S_BCLK] = {GPIOA, {.Pin=GPIO_PIN_8, .Mode=GPIO_MODE_AF_PP, .Alternate=GPIO_AF14_SAI1}},
+    [I2S_LRCLK] = {GPIOA, {.Pin=GPIO_PIN_9, .Mode=GPIO_MODE_AF_PP, .Alternate=GPIO_AF14_SAI1}},
+    [I2S_DOUT] = {GPIOA, {.Pin=GPIO_PIN_10, .Mode=GPIO_MODE_AF_PP, .Alternate=GPIO_AF14_SAI1}},
+    [I2S_DIN] = {GPIOB, {.Pin=GPIO_PIN_5, .Mode=GPIO_MODE_AF_PP, .Alternate=GPIO_AF12_SAI1}},
 };
 
 
@@ -48,6 +59,14 @@ int main(void)
     
     log_init();
     printf("***** Starting up *****\r\n");
+
+    if (audio_codec_init() != 0) {
+        printf("Error: audio coded init failed\r\n");
+    }
+
+    if (audio_run(NULL) != 0) {
+        printf("Error: audio streaming init failed\r\n");
+    }
 
     while (1) {
         uint32_t t0 = HAL_GetTick();
