@@ -34,12 +34,19 @@ int main(void)
     DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
     DWT->CYCCNT = 0;
 
+    int i = 0;
     while (1) {
         const uint32_t t = HAL_GetTick();
 
         while (HAL_GetTick() < t + 1000)
             ;
+
+        i++;
         gpio_toggle(PIN_LED0);
+        gpio_set(PIN_GPIO1, (i/3) % 2);
+        gpio_set(PIN_GPIO2, !((i-0) % 3));
+        gpio_set(PIN_GPIO3, !((i-1) % 3));
+        gpio_set(PIN_GPIO4, !((i-2) % 3));
         dsp_dump_stats();
         audio_dump_stats();
     }
