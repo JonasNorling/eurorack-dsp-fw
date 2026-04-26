@@ -31,11 +31,10 @@ int main(void)
     while (1) {
         const uint32_t t = HAL_GetTick();
 
-        while (HAL_GetTick() < t + 100)
+        while (HAL_GetTick() < t + 1000)
             ;
         gpio_toggle(PIN_LED0);
-        printf(".");
-        fflush(0);
+        dsp_dump_stats();
     }
 }
 

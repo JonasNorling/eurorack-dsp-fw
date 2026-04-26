@@ -1,9 +1,46 @@
 #include "dsp.h"
 #include "audio.h"
+#include "utils.h"
 
-#include <string.h>  // memcpy
+#include <stdio.h>
+#include <string.h>
+
+typedef struct {
+    float min[2];
+    float max[2];
+} statistics_t;
+
+static statistics_t in_stats, out_stats;
+
+static void update_statistics(statistics_t *s, frame_t v)
+{
+    s->min[0] = MIN(s->min[0], v.s[0]);
+    s->max[0] = MAX(s->max[0], v.s[0]);
+    s->min[1] = MIN(s->min[1], v.s[1]);
+    s->max[1] = MAX(s->max[1], v.s[1]);
+}
+
+void dsp_dump_stats(void)
+{
+    printf("In range: %d%%..%d%% %d%%..%d%%  Out range: %d%%..%d%% %d%%..%d%%\r\n",
+        100 * (int)in_stats.min[0] / SAMPLE_MIN,
+        100 * (int)in_stats.max[0] / SAMPLE_MAX,
+        100 * (int)in_stats.min[1] / SAMPLE_MIN,
+        100 * (int)in_stats.max[1] / SAMPLE_MAX,
+        100 * (int)out_stats.min[0] / SAMPLE_MIN,
+        100 * (int)out_stats.max[0] / SAMPLE_MAX,
+        100 * (int)out_stats.min[1] / SAMPLE_MIN,
+        100 * (int)out_stats.max[1] / SAMPLE_MAX);
+    memset(&in_stats, 0, sizeof(in_stats));
+    memset(&out_stats, 0, sizeof(out_stats));
+}
 
 void dsp_do(const frame_t * const restrict in, frame_t * const restrict out)
 {
-    memcpy(out, in, sizeof(frame_t) * FRAMES_PER_BLOCK);
+    for (int i = 0; i < FRAMES_PER_BLOCK; i++) {
+        update_statistics(&in_stats, in[i]);
+        out[i].s[0] = in[i].s[0];
+        out[i].s[1] = in[i].s[1];
+        update_statistics(&out_stats, out[i]);
+    }
 }
