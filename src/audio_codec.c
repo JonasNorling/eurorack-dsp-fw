@@ -5,6 +5,12 @@
 
 #include <stdio.h>
 
+static int32_t out_block[2 * FRAMES_PER_BLOCK] = {};
+static int32_t in_block[2 * FRAMES_PER_BLOCK] = {};
+static frame_t in_frames[FRAMES_PER_BLOCK];
+static frame_t out_frames[FRAMES_PER_BLOCK];
+static void(*s_dsp_fn)(const frame_t * const in, frame_t *const out);
+
 static SAI_HandleTypeDef hsai_tx = {
     .Instance = SAI1_Block_A,
     .Init = {
@@ -41,6 +47,48 @@ static SAI_HandleTypeDef hsai_rx = {
     },
 };
 
+void SAI1_IRQHandler(void)
+{
+    HAL_SAI_IRQHandler(&hsai_rx);
+}
+
+void HAL_SAI_RxCpltCallback(SAI_HandleTypeDef *hsai)
+{
+    (void)hsai;
+    for (int i = 0; i < FRAMES_PER_BLOCK; i++) {
+        // 24-bit data in LSB. Shift up and down to sign-extend.
+        in_frames[i].s[0] = (float)((in_block[2*i+0] << 8) >> 8);
+        in_frames[i].s[1] = (float)((in_block[2*i+1] << 8) >> 8);
+    }
+    
+    gpio_set(PIN_GPIO2, true);
+    s_dsp_fn(in_frames, out_frames);
+    gpio_set(PIN_GPIO2, false);
+    
+    for (int i = 0; i < FRAMES_PER_BLOCK; i++) {
+        out_block[2*i+0] = float_to_codec(out_frames[i].s[0]);
+        out_block[2*i+1] = float_to_codec(out_frames[i].s[1]);
+    }
+    
+    gpio_set(PIN_GPIO1, true);
+    HAL_StatusTypeDef ret = HAL_SAI_Transmit(&hsai_tx, (void*)out_block, 2 * FRAMES_PER_BLOCK, 0);
+    if (ret != HAL_OK) {
+        printf("Audio TX failed: %d\r\n", ret);
+    }
+    gpio_set(PIN_GPIO1, false);
+
+    ret = HAL_SAI_Receive_IT(&hsai_rx, (void*)in_block, 2 * FRAMES_PER_BLOCK);
+    if (ret != HAL_OK) {
+        printf("Audio RX failed: %d\r\n", ret);
+    }
+}
+
+void HAL_SAI_ErrorCallback(SAI_HandleTypeDef *hsai)
+{
+    (void)hsai;
+    printf("SAI error\r\n");
+}
+
 int audio_codec_init(void)
 {
     static const RCC_PeriphCLKInitTypeDef sai1_pclock = {
@@ -59,16 +107,18 @@ int audio_codec_init(void)
     if (HAL_SAI_InitProtocol(&hsai_rx, SAI_I2S_STANDARD, SAI_PROTOCOL_DATASIZE_24BIT, 2) != HAL_OK) {
         return 1;
     }
+    
+    NVIC_SetPriority(SAI1_IRQn, 0x80);
+    NVIC_EnableIRQ(SAI1_IRQn);
+    
     return 0;
 }
 
-int audio_run(void(*dsp_fn)(const frame_t * const in, frame_t *const out), void(*do_work)())
+int audio_run(void(*dsp_fn)(const frame_t * const in, frame_t *const out))
 {
-    (void)dsp_fn;
     int ret;
-    int32_t out_block[2 * FRAMES_PER_BLOCK] = {};
-    int32_t in_block[2 * FRAMES_PER_BLOCK] = {};
     
+    s_dsp_fn = dsp_fn;
     printf("Starting I2S streaming\r\n");
     
     /*
@@ -88,41 +138,11 @@ int audio_run(void(*dsp_fn)(const frame_t * const in, frame_t *const out), void(
         return 1;
     }
     
-    while (1) {
-        do_work();
-        
-        // This is where we're blocking waiting for data
-        ret = HAL_SAI_Receive(&hsai_rx, (void*)in_block, 2 * FRAMES_PER_BLOCK, 10);
-        if (ret != HAL_OK) {
-            printf("Audio RX failed: %d\r\n", ret);
-            return 1;
-        }
-        
-        static frame_t in_frames[FRAMES_PER_BLOCK];
-        static frame_t out_frames[FRAMES_PER_BLOCK];
-        
-        for (int i = 0; i < FRAMES_PER_BLOCK; i++) {
-            // 24-bit data in LSB. Shift up and down to sign-extend.
-            in_frames[i].s[0] = (float)((in_block[2*i+0] << 8) >> 8);
-            in_frames[i].s[1] = (float)((in_block[2*i+1] << 8) >> 8);
-        }
-        
-        gpio_set(PIN_GPIO2, true);
-        dsp_fn(in_frames, out_frames);
-        gpio_set(PIN_GPIO2, false);
-        
-        for (int i = 0; i < FRAMES_PER_BLOCK; i++) {
-            out_block[2*i+0] = float_to_codec(out_frames[i].s[0]);
-            out_block[2*i+1] = float_to_codec(out_frames[i].s[1]);
-        }
-        
-        gpio_set(PIN_GPIO1, true);
-        ret = HAL_SAI_Transmit(&hsai_tx, (void*)out_block, 2 * FRAMES_PER_BLOCK, 0);
-        if (ret != HAL_OK) {
-            printf("Audio TX failed: %d\r\n", ret);
-            return 1;
-        }
-        gpio_set(PIN_GPIO1, false);
+    // Get the party started. The interrupt handler will take over later on.
+    ret = HAL_SAI_Receive_IT(&hsai_rx, (void*)in_block, 2 * FRAMES_PER_BLOCK);
+    if (ret != HAL_OK) {
+        printf("Audio RX failed: %d\r\n", ret);
+        return 1;
     }
     
     return 0;

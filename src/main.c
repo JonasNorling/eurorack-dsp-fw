@@ -11,19 +11,6 @@
 
 static void SystemClock_Config(void);
 
-static void extra_work(void)
-{
-    static uint32_t last_blink = 0;
-    const uint32_t t = HAL_GetTick();
-
-    if (t >= last_blink + 100) {
-        gpio_toggle(PIN_LED0);
-        printf(".");
-        fflush(0);
-        last_blink = t;
-    }
-}
-
 int main(void)
 {
     HAL_Init();
@@ -37,12 +24,19 @@ int main(void)
         printf("Error: audio coded init failed\r\n");
     }
 
-    if (audio_run(dsp_do, extra_work) != 0) {
+    if (audio_run(dsp_do) != 0) {
         printf("Error: audio streaming failed\r\n");
     }
 
-    while (1)
-        ;
+    while (1) {
+        const uint32_t t = HAL_GetTick();
+
+        while (HAL_GetTick() < t + 100)
+            ;
+        gpio_toggle(PIN_LED0);
+        printf(".");
+        fflush(0);
+    }
 }
 
 static void SystemClock_Config(void)
