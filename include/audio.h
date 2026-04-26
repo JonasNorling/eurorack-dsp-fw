@@ -1,10 +1,11 @@
 #pragma once
 #include <stdint.h>
 
-typedef int16_t sample_t;
 #define FRAMES_PER_BLOCK 2
 #define SAMPLE_RATE 48000
+#define SAMPLE_MAX (1 << 23)
+#define SAMPLE_MIN (-(1 << 23) + 1)
 
 typedef struct {
-    sample_t s[2];  // left & right channel
+    float s[2];  // left & right channel
 } frame_t;
