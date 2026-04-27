@@ -1,6 +1,7 @@
 TOOLCHAIN_DIR=arm-gnu-toolchain-15.2.rel1-x86_64-arm-none-eabi/bin/
 CC=$(TOOLCHAIN_DIR)/arm-none-eabi-gcc
 SIZE=$(TOOLCHAIN_DIR)/arm-none-eabi-size
+OBJCOPY=$(TOOLCHAIN_DIR)/arm-none-eabi-objcopy
 
 INCLUDE_DIR=include
 CPPFLAGS=\
@@ -72,6 +73,18 @@ flash-openocd: $(BUILDDIR)/application.elf
 		-c "reset" \
 		-c "shutdown"
 
+dfu: dfu-application
+dfu-%: $(BUILDDIR)/%.bin-dfu
+	dfu-util -a 0 -s 0x08000000 -D $<
+
+$(BUILDDIR)/%.bin-dfu: $(BUILDDIR)/%.bin
+	cp $< $@
+	dfu-suffix -a $@ -v 0483 -p df11
+
+%.bin: %.elf
+	@echo flattening $@
+	@$(OBJCOPY) -Obinary $< $@
+
 gdbserver:
 	openocd \
 		-f board/st_nucleo_g4.cfg \
@@ -85,3 +98,4 @@ arm-gnu-toolchain-15.2.rel1-x86_64-arm-none-eabi.tar.xz:
 
 install-toolchain: arm-gnu-toolchain-15.2.rel1-x86_64-arm-none-eabi.tar.xz
 	tar xf arm-gnu-toolchain-15.2.rel1-x86_64-arm-none-eabi.tar.xz
+
