@@ -18,6 +18,14 @@ static const struct {
     [I2S_LRCLK] = {GPIOA, {.Pin=GPIO_PIN_9, .Mode=GPIO_MODE_AF_PP, .Alternate=GPIO_AF14_SAI1}},
     [I2S_DOUT] = {GPIOA, {.Pin=GPIO_PIN_10, .Mode=GPIO_MODE_AF_PP, .Alternate=GPIO_AF14_SAI1}},
     [I2S_DIN] = {GPIOB, {.Pin=GPIO_PIN_5, .Mode=GPIO_MODE_AF_PP, .Alternate=GPIO_AF12_SAI1}},
+    [AIN1] = {GPIOA, {.Pin=GPIO_PIN_0, .Mode=GPIO_MODE_ANALOG}},
+    [AIN2] = {GPIOA, {.Pin=GPIO_PIN_1, .Mode=GPIO_MODE_ANALOG}},
+    [AIN3] = {GPIOA, {.Pin=GPIO_PIN_2, .Mode=GPIO_MODE_ANALOG}},
+    [AIN4] = {GPIOB, {.Pin=GPIO_PIN_2, .Mode=GPIO_MODE_ANALOG}},
+    [AIN5] = {GPIOB, {.Pin=GPIO_PIN_12, .Mode=GPIO_MODE_ANALOG}},
+    [AIN6] = {GPIOB, {.Pin=GPIO_PIN_13, .Mode=GPIO_MODE_ANALOG}},
+    [AIN7] = {GPIOB, {.Pin=GPIO_PIN_14, .Mode=GPIO_MODE_ANALOG}},
+    [AIN8] = {GPIOB, {.Pin=GPIO_PIN_15, .Mode=GPIO_MODE_ANALOG}},
 };
 
 void gpio_init(void)

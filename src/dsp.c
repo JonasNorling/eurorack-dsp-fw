@@ -2,6 +2,7 @@
 #include "audio.h"
 #include "utils.h"
 #include "audio_util.h"
+#include "analog_in.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -23,7 +24,7 @@ static void update_statistics(statistics_t *s, frame_t v)
 
 void dsp_dump_stats(void)
 {
-    printf("In range: %d%%..%d%% %d%%..%d%%  Out range: %d%%..%d%% %d%%..%d%%\r\n",
+    printf("In range: %d%%..%d%% %d%%..%d%%  Out range: %d%%..%d%% %d%%..%d%%. Knobs: %d%%\r\n",
         100 * (int)in_stats.min[0] / SAMPLE_MIN,
         100 * (int)in_stats.max[0] / SAMPLE_MAX,
         100 * (int)in_stats.min[1] / SAMPLE_MIN,
@@ -31,17 +32,22 @@ void dsp_dump_stats(void)
         100 * (int)out_stats.min[0] / SAMPLE_MIN,
         100 * (int)out_stats.max[0] / SAMPLE_MAX,
         100 * (int)out_stats.min[1] / SAMPLE_MIN,
-        100 * (int)out_stats.max[1] / SAMPLE_MAX);
+        100 * (int)out_stats.max[1] / SAMPLE_MAX,
+        (int)(analog_in_get(0) * 100));
     memset(&in_stats, 0, sizeof(in_stats));
     memset(&out_stats, 0, sizeof(out_stats));
 }
 
 void dsp_do(const frame_t * const restrict in, frame_t * const restrict out)
 {
+    const float knobs[] = {
+        analog_in_get(0),
+    };
+
     for (int i = 0; i < FRAMES_PER_BLOCK; i++) {
         update_statistics(&in_stats, in[i]);
-        out[i].s[0] = saturate_tube(in[i].s[0]);
-        out[i].s[1] = saturate_tube(in[i].s[1]);
+        out[i].s[0] = 3.0f * knobs[0]*knobs[0] * saturate_tube(in[i].s[0]);
+        out[i].s[1] = 3.0f * knobs[0]*knobs[0] * saturate_tube(in[i].s[1]);
         update_statistics(&out_stats, out[i]);
     }
 }

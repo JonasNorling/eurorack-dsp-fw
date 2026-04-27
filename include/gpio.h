@@ -14,6 +14,14 @@ typedef enum {
     I2S_LRCLK,
     I2S_DOUT,
     I2S_DIN,
+    AIN1,
+    AIN2,
+    AIN3,
+    AIN4,
+    AIN5,
+    AIN6,
+    AIN7,
+    AIN8,
 } GpioPin;
 
 void gpio_init(void);

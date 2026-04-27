@@ -8,6 +8,7 @@
 #include "audio_codec.h"
 #include "dsp.h"
 #include "gpio.h"
+#include "analog_in.h"
 
 static void SystemClock_Config(void);
 
@@ -20,6 +21,9 @@ int main(void)
     log_init();
     printf("***** Starting up *****\r\n");
 
+    if (analog_in_init() != 0) {
+        printf("Error: analog in init failed\r\n");
+    }
     if (audio_codec_init() != 0) {
         printf("Error: audio coded init failed\r\n");
     }
@@ -38,8 +42,12 @@ int main(void)
     while (1) {
         const uint32_t t = HAL_GetTick();
 
-        while (HAL_GetTick() < t + 1000)
+        while (HAL_GetTick() < t + 100)
             ;
+
+        if (analog_in_run() != 0) {
+            printf("Analog in bailed\r\n");
+        }
 
         i++;
         gpio_toggle(PIN_LED0);
@@ -47,8 +55,11 @@ int main(void)
         gpio_set(PIN_GPIO2, !((i-0) % 3));
         gpio_set(PIN_GPIO3, !((i-1) % 3));
         gpio_set(PIN_GPIO4, !((i-2) % 3));
-        dsp_dump_stats();
-        audio_dump_stats();
+        
+        if (!(i % 10)) {
+            dsp_dump_stats();
+            audio_dump_stats();
+        }
     }
 }
 
