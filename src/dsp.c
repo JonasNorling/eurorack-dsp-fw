@@ -24,7 +24,8 @@ static void update_statistics(statistics_t *s, frame_t v)
 
 void dsp_dump_stats(void)
 {
-    printf("In range: %d%%..%d%% %d%%..%d%%  Out range: %d%%..%d%% %d%%..%d%%. Knobs: %d%%\r\n",
+    printf("In range: %d%%..%d%% %d%%..%d%%  Out range: %d%%..%d%% %d%%..%d%%. "
+        "Knobs: %d%% %d%% %d%%, CV: %d%% %d%% %d%%\r\n",
         100 * (int)in_stats.min[0] / SAMPLE_MIN,
         100 * (int)in_stats.max[0] / SAMPLE_MAX,
         100 * (int)in_stats.min[1] / SAMPLE_MIN,
@@ -33,7 +34,12 @@ void dsp_dump_stats(void)
         100 * (int)out_stats.max[0] / SAMPLE_MAX,
         100 * (int)out_stats.min[1] / SAMPLE_MIN,
         100 * (int)out_stats.max[1] / SAMPLE_MAX,
-        (int)(analog_in_get(0) * 100));
+        (int)(analog_in_get(0) * 100),
+        (int)(analog_in_get(1) * 100),
+        (int)(analog_in_get(2) * 100),
+        (int)(analog_in_get(3) * 100),
+        (int)(analog_in_get(4) * 100),
+        (int)(analog_in_get(5) * 100));
     memset(&in_stats, 0, sizeof(in_stats));
     memset(&out_stats, 0, sizeof(out_stats));
 }

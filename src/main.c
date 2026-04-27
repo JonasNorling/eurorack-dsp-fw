@@ -17,8 +17,12 @@ int main(void)
     HAL_Init();
     SystemClock_Config();
     
+    __HAL_RCC_DMA1_CLK_ENABLE();
+    __HAL_RCC_DMAMUX1_CLK_ENABLE();
+
     gpio_init();
     log_init();
+    
     printf("***** Starting up *****\r\n");
 
     if (analog_in_init() != 0) {
@@ -44,10 +48,6 @@ int main(void)
 
         while (HAL_GetTick() < t + 100)
             ;
-
-        if (analog_in_run() != 0) {
-            printf("Analog in bailed\r\n");
-        }
 
         i++;
         gpio_toggle(PIN_LED0);
