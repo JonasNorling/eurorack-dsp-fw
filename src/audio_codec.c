@@ -3,6 +3,7 @@
 #include "gpio.h"
 #include "audio_util.h"
 #include "utils.h"
+#include "priorities.h"
 
 #include <stdio.h>
 
@@ -115,7 +116,7 @@ int audio_codec_init(void)
         return 1;
     }
     
-    NVIC_SetPriority(SAI1_IRQn, 0x80);
+    HAL_NVIC_SetPriority(SAI1_IRQn, prio_sai_dma, 0);
     NVIC_EnableIRQ(SAI1_IRQn);
     
     return 0;

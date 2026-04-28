@@ -25,7 +25,7 @@ static void update_statistics(statistics_t *s, frame_t v)
 void dsp_dump_stats(void)
 {
     printf("In range: %d%%..%d%% %d%%..%d%%  Out range: %d%%..%d%% %d%%..%d%%. "
-        "Knobs: %d%% %d%% %d%%, CV: %d%% %d%% %d%%\r\n",
+        "Knobs: %d%% %d%% %d%% %d%%, CV: %d%% %d%% %d%% %d%%\r\n",
         100 * (int)in_stats.min[0] / SAMPLE_MIN,
         100 * (int)in_stats.max[0] / SAMPLE_MAX,
         100 * (int)in_stats.min[1] / SAMPLE_MIN,
@@ -39,7 +39,9 @@ void dsp_dump_stats(void)
         (int)(analog_in_get(2) * 100),
         (int)(analog_in_get(3) * 100),
         (int)(analog_in_get(4) * 100),
-        (int)(analog_in_get(5) * 100));
+        (int)(analog_in_get(5) * 100),
+        (int)(analog_in_get(6) * 100),
+        (int)(analog_in_get(7) * 100));
     memset(&in_stats, 0, sizeof(in_stats));
     memset(&out_stats, 0, sizeof(out_stats));
 }
@@ -48,12 +50,13 @@ void dsp_do(const frame_t * const restrict in, frame_t * const restrict out)
 {
     const float knobs[] = {
         analog_in_get(0),
+        analog_in_get(1),
     };
 
     for (int i = 0; i < FRAMES_PER_BLOCK; i++) {
         update_statistics(&in_stats, in[i]);
-        out[i].s[0] = 3.0f * knobs[0]*knobs[0] * saturate_tube(in[i].s[0]);
-        out[i].s[1] = 3.0f * knobs[0]*knobs[0] * saturate_tube(in[i].s[1]);
+        out[i].s[0] = knobs[0]*knobs[0] * saturate_tube(10.0f * knobs[1]*knobs[1] * in[i].s[0]);
+        out[i].s[1] = knobs[0]*knobs[0] * saturate_tube(10.0f * knobs[1]*knobs[1] * in[i].s[1]);
         update_statistics(&out_stats, out[i]);
     }
 }

@@ -1,6 +1,7 @@
 #include "serial_log.h"
 #include "stm32g4xx_hal.h"
 #include "utils.h"
+#include "priorities.h"
 
 #include <unistd.h>
 #include <string.h>
@@ -53,7 +54,7 @@ void log_init(void)
             ;
     }
 
-    NVIC_SetPriority(USART1_IRQn, 0xff);  // Low prio, I think
+    HAL_NVIC_SetPriority(USART1_IRQn, prio_log_uart, 0);
     NVIC_EnableIRQ(USART1_IRQn);
 }
 
