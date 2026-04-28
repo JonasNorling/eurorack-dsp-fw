@@ -50,12 +50,7 @@ int main(void)
             ;
 
         i++;
-        gpio_toggle(PIN_LED0);
-        gpio_set(PIN_GPIO1, (i/3) % 2);
-        gpio_set(PIN_GPIO2, !((i-0) % 3));
-        gpio_set(PIN_GPIO3, !((i-1) % 3));
-        gpio_set(PIN_GPIO4, !((i-2) % 3));
-        
+        gpio_set(PIN_LED0, !(i % 5));
         if (!(i % 10)) {
             dsp_dump_stats();
             audio_dump_stats();
@@ -93,14 +88,34 @@ static void SystemClock_Config(void)
     clocks dividers */
     RCC_ClkInitStruct.ClockType           = (RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_HCLK | \
         RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2);
-        RCC_ClkInitStruct.SYSCLKSource        = RCC_SYSCLKSOURCE_PLLCLK;
-        RCC_ClkInitStruct.AHBCLKDivider       = RCC_HCLK_DIV1;
-        RCC_ClkInitStruct.APB1CLKDivider      = RCC_HCLK_DIV1;
-        RCC_ClkInitStruct.APB2CLKDivider      = RCC_HCLK_DIV1;
-        if(HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_8) != HAL_OK)
-        {
-            /* Initialization Error */
-            while(1);
-        }
+    RCC_ClkInitStruct.SYSCLKSource        = RCC_SYSCLKSOURCE_PLLCLK;
+    RCC_ClkInitStruct.AHBCLKDivider       = RCC_HCLK_DIV1;
+    RCC_ClkInitStruct.APB1CLKDivider      = RCC_HCLK_DIV1;
+    RCC_ClkInitStruct.APB2CLKDivider      = RCC_HCLK_DIV1;
+    if(HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_8) != HAL_OK)
+    {
+        /* Initialization Error */
+        while(1);
     }
-    
+}
+
+/* Define some functions to make the linker shut up */
+void _close(void)
+{
+}
+
+void _fstat(void)
+{
+}
+
+void _isatty(void)
+{
+}
+
+void _lseek(void)
+{
+}
+
+void _read(void)
+{
+}

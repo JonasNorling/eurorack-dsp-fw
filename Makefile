@@ -12,7 +12,7 @@ CPPFLAGS=\
 	-Istm32-cube/Drivers/CMSIS/Device/ST/STM32G4xx/Include \
 	-Istm32-cube/Drivers/BSP/STM32G474E-EVAL
 
-CFLAGS=-mcpu=cortex-m4 -mfloat-abi=hard -Wall -Wextra -Werror -g -Og
+CFLAGS=-mcpu=cortex-m4 -mfloat-abi=hard -mthumb -Wall -Wextra -Werror -g -Og
 LDFLAGS=-Wl,-Tsrc/STM32G474CCTX_FLASH.ld --specs=nano.specs --specs=nosys.specs
 
 BUILDDIR=build
@@ -23,6 +23,7 @@ SRCS += src/serial_log.c
 SRCS += src/audio_codec.c
 SRCS += src/dsp.c
 SRCS += src/analog_in.c
+SRCS += src/biquad.c
 
 SRCS += src/system_stm32g4xx.c
 SRCS += src/stm32g4xx_it.c
@@ -57,7 +58,7 @@ $(BUILDDIR)/%.o: %.c
 $(BUILDDIR)/application.elf: $(OBJS)
 	@echo LD $@
 	@mkdir -p $(dir $@)
-	@$(CC) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS) -o $@ $^
+	@$(CC) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS) -o $@ $^ -lm
 	$(SIZE) $@
 
 flash: flash-stm32cubeprogrammer
