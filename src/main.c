@@ -9,8 +9,26 @@
 #include "dsp.h"
 #include "gpio.h"
 #include "analog_in.h"
+#include "analog_out.h"
 
 static void SystemClock_Config(void);
+
+static void lamp_test(void)
+{
+    uint32_t t0 = HAL_GetTick();
+    uint32_t dt = HAL_GetTick() - t0;
+    while (dt < 1000) {
+        dt = HAL_GetTick() - t0;
+        for (unsigned i = 0; i < 6; i++) {
+            gpio_set_led(i, dt > i * 100);
+        }
+        gpio_update_leds();
+        __WFI();
+    }
+    for (int i = 0; i < 6; i++) {
+        gpio_set_led(i, false);
+    }
+}
 
 int main(void)
 {
@@ -24,12 +42,16 @@ int main(void)
     log_init();
     
     printf("***** Starting up *****\r\n");
+    lamp_test();
 
     if (analog_in_init() != 0) {
         printf("Error: analog in init failed\r\n");
     }
     if (audio_codec_init() != 0) {
         printf("Error: audio coded init failed\r\n");
+    }
+    if (analog_out_init() != 0) {
+        printf("Error: analog out init failed\r\n");
     }
 
     if (audio_run(dsp_do) != 0) {
@@ -46,8 +68,10 @@ int main(void)
     while (1) {
         const uint32_t t = HAL_GetTick();
 
-        while (HAL_GetTick() < t + 100)
-            ;
+        while (HAL_GetTick() < t + 100) {
+            gpio_update_leds();
+            __WFI();
+        }
 
         i++;
         gpio_set(PIN_LED0, !(i % 5));

@@ -23,6 +23,7 @@ SRCS += src/serial_log.c
 SRCS += src/audio_codec.c
 SRCS += src/dsp.c
 SRCS += src/analog_in.c
+SRCS += src/analog_out.c
 SRCS += src/biquad.c
 
 SRCS += src/system_stm32g4xx.c
@@ -41,6 +42,8 @@ SRCS += stm32-cube/Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_dma.c
 SRCS += stm32-cube/Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_sai.c
 SRCS += stm32-cube/Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_adc.c
 SRCS += stm32-cube/Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_adc_ex.c
+SRCS += stm32-cube/Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_dac.c
+SRCS += stm32-cube/Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_dac_ex.c
 SRCS += src/startup_stm32g474retx.s
 
 OBJS := $(SRCS:%.c=$(BUILDDIR)/%.o)

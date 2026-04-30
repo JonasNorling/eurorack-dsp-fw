@@ -5,6 +5,7 @@
 #include "analog_in.h"
 #include "biquad.h"
 #include "gpio.h"
+#include "analog_out.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -161,7 +162,7 @@ void dsp_do(const frame_t * const restrict in, frame_t * const restrict out)
 	const float trigger_pulse = CLAMP(q_highpass(&lpg_state.trigger_filter, 0.05, cv[0]), 0.0f, 1.0f);
 	const float envelope_open = CLAMP(cv[1], 0.0f, 1.0f);
 
-    gpio_set(PIN_GPIO2, trigger_pulse > 0.01f);
+    gpio_set_led(3, trigger_pulse > 0.01f);
     for (int i = 0; i < FRAMES_PER_BLOCK; i++) {
         update_statistics(&in_stats, in[i]);
     }
@@ -169,7 +170,7 @@ void dsp_do(const frame_t * const restrict in, frame_t * const restrict out)
 	_lpg_main(
 		in,
 		out,
-		trigger_pulse > 0.3f,
+		trigger_pulse > 0.3f || !gpio_get(PIN_BUTTON_1),
 		envelope_open,
 		attack_time_ms,
 		decay_time_ms,
@@ -177,8 +178,9 @@ void dsp_do(const frame_t * const restrict in, frame_t * const restrict out)
 		q_factor
 	);
 
-	gpio_set(PIN_GPIO3, will_clip(out, FRAMES_PER_BLOCK));
-    gpio_set(PIN_GPIO4, cv[0] > 0.5f);
+    gpio_set_led(4, will_clip(out, FRAMES_PER_BLOCK));
+    gpio_set_led(5, cv[0] > 0.5f);
+    analog_out_set(trigger_pulse * 4095, pot[0] * 4095, lpg_state.env_value * 4095);
     for (int i = 0; i < FRAMES_PER_BLOCK; i++) {
         update_statistics(&out_stats, out[i]);
     }
