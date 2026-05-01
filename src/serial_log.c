@@ -37,6 +37,12 @@ void HAL_USART_TxCpltCallback(USART_HandleTypeDef *husart)
     }
 }
 
+void log_emergency(void)
+{
+    // Assuming interrupts are disabled. Output remaining log text.
+    HAL_USART_IRQHandler(&s_huart);
+}
+
 void log_init(void)
 {
     // Configure USART1 as "console"

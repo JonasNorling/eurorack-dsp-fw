@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <assert.h>
 
 #include "stm32g4xx_hal.h"
 #include "utils.h"
@@ -46,16 +47,20 @@ int main(void)
 
     if (analog_in_init() != 0) {
         printf("Error: analog in init failed\r\n");
+        assert(false);
     }
     if (audio_codec_init() != 0) {
         printf("Error: audio coded init failed\r\n");
+        assert(false);
     }
     if (analog_out_init() != 0) {
         printf("Error: analog out init failed\r\n");
+        assert(false);
     }
 
     if (audio_run(dsp_do) != 0) {
         printf("Error: audio streaming failed\r\n");
+        assert(false);
     }
 
     // Enable cycle counter in DWT
@@ -155,10 +160,15 @@ void _kill(void)
 void _exit(int status)
 {
     (void)status;
+    __disable_irq();
     for (int i = 0; i < 6; i++) {
         gpio_set_led(i, true);
     }
     while (1) {
         gpio_update_leds();
+        for (int i = 0; i < 100000; i++) {
+            __NOP();
+        }
+        log_emergency();
     }
 }
