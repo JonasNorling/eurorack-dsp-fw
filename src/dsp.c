@@ -117,9 +117,7 @@ static void _lpg_main(
 		lpg_state.env_value = CLAMP(lpg_state.env_value - decay_step, 0.0f, 1.0f);
 	}
 
-    (void)envelope_open;
-	//const float env_open_sq = envelope_open * envelope_open;
-	const float env_open_sq = lpg_state.env_value * lpg_state.env_value;
+	const float env_open_sq = envelope_open * envelope_open + lpg_state.env_value * lpg_state.env_value;
 	float cutoff = CLAMP(env_open_sq * env_open_sq, 0.001f, 3.1f);
 	bq_make_lowpass(&lpg_state.lp_filter_state[0].coeffs, cutoff, q_factor);
 	lpg_state.lp_filter_state[1].coeffs = lpg_state.lp_filter_state[0].coeffs;
@@ -160,7 +158,7 @@ void dsp_do(const frame_t * const restrict in, frame_t * const restrict out)
 	const float q_factor = RAMP(pot[3], 0.1f, 10.0f);
 
 	const float trigger_pulse = CLAMP(q_highpass(&lpg_state.trigger_filter, 0.05, cv[0]), 0.0f, 1.0f);
-	const float envelope_open = CLAMP(cv[1], 0.0f, 1.0f);
+	const float envelope_open = cv[1];
 
     gpio_set_led(3, trigger_pulse > 0.01f);
     for (int i = 0; i < FRAMES_PER_BLOCK; i++) {
