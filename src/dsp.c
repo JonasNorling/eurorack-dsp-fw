@@ -182,6 +182,8 @@ void dsp_do(const frame_t * const restrict in, frame_t * const restrict out)
     gpio_set_led(5, cv[0] > 0.5f);
     analog_out_set(trigger_pulse * 4095, pot[0] * 4095, lpg_state.env_value * 4095);
     for (int i = 0; i < FRAMES_PER_BLOCK; i++) {
+        out[i].s[0] = saturate_soft(out[i].s[0]);
+        out[i].s[1] = saturate_soft(out[i].s[1]);
         update_statistics(&out_stats, out[i]);
     }
 }

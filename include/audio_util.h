@@ -17,6 +17,20 @@ static inline int32_t float_to_codec(float v)
     return CLAMP(v, SAMPLE_MIN, SAMPLE_MAX);
 }
 
+static inline float saturate_soft(float x)
+{
+    // This levels off just before 1.0
+    if (x >= SAMPLE_MAX) {
+        return SAMPLE_MAX;
+    }
+    if (x <= SAMPLE_MIN) {
+        return SAMPLE_MIN;
+    }
+
+    x *= (1.0f/SAMPLE_MAX);
+    return SAMPLE_MAX * ((1.5f) * x - 0.5f * x * x * x);
+}
+
 static inline float saturate_tube(float _x)
 {
     // Clippy, tube-like distortion
