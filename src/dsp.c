@@ -152,10 +152,11 @@ void dsp_do(const frame_t * const restrict in, frame_t * const restrict out)
 		analog_in_get(5) * 2.0f - 1.0f,
 	};
 
-	const float attack_time_ms = RAMP(pot[1] * pot[1] * pot[1], 2.0f, 500.0f);
+	const float attack_time_ms = 2.0f;
 	const float filt_vca_mix = pot[0];
 	const float decay_time_ms = RAMP(pot[2] * pot[2] * pot[2], 10.0f, 5000.0f);
 	const float q_factor = RAMP(pot[3], 0.1f, 10.0f);
+    const float distorsion = RAMP(pot[1], 0.0f, 1.1f);
 
 	const float trigger_pulse = CLAMP(q_highpass(&lpg_state.trigger_filter, 0.05, cv[0]), 0.0f, 1.0f);
 	const float envelope_open = cv[1];
@@ -180,6 +181,8 @@ void dsp_do(const frame_t * const restrict in, frame_t * const restrict out)
     gpio_set_led(5, cv[0] > 0.5f);
     analog_out_set(trigger_pulse * 4095, pot[0] * 4095, lpg_state.env_value * 4095);
     for (int i = 0; i < FRAMES_PER_BLOCK; i++) {
+        out[i].s[0] = tube_distortion(out[i].s[0], distorsion);
+        out[i].s[1] = tube_distortion(out[i].s[1], distorsion);
         out[i].s[0] = saturate_soft(out[i].s[0]);
         out[i].s[1] = saturate_soft(out[i].s[1]);
         update_statistics(&out_stats, out[i]);

@@ -31,17 +31,17 @@ static inline float saturate_soft(float x)
     return SAMPLE_MAX * ((1.5f) * x - 0.5f * x * x * x);
 }
 
-static inline float saturate_tube(float _x)
+static inline float tube_distortion(float _x, float depth)
 {
     // Clippy, tube-like distortion
     // References : Posted by Partice Tarrabia and Bram de Jong
-    const float depth = 0.5;
+    // This has the effect of squaring off the input waveform.
+    // Keep depth=0..1 or suffer.
+    //const float depth = 0.5f;
     const float k = 2.0f * depth / (1.0f - depth);
     const float b = SAMPLE_MAX;
     const float x = _x / b;
-    const float ret = b * (1 + k) * x / (1 + k * fabsf(x));
-    if (ret < SAMPLE_MIN) return SAMPLE_MIN;
-    if (ret > SAMPLE_MAX) return SAMPLE_MAX;
+    const float ret = b * (1.0f + k) * x / (1.0f + k * fabsf(x));
     return ret;
 }
 
