@@ -1,4 +1,5 @@
 #include "biquad.h"
+#include "lut_fn.h"
 #include <math.h>
 
 /*
@@ -18,10 +19,10 @@ void bq_make_lowpass(bq_coeffs* c, float w0, float q)
             a2 =   1 - alpha
      */
 
-    const float alpha = sinf(w0)/(2.0f*q);
+    const float alpha = lut_sin(w0)/(2.0f*q);
     const float a0 = 1.0f + alpha;
     const float a0inv = 1.0f / a0;
-    const float cosw0 = cosf(w0);
+    const float cosw0 = lut_cos(w0);
     c->a1 = -2.0f * cosw0 * a0inv;
     c->a2 = (1.0f - alpha) * a0inv;
     c->b1 = (1.0f - cosw0) * a0inv;

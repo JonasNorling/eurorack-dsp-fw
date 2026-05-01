@@ -143,3 +143,22 @@ void _lseek(void)
 void _read(void)
 {
 }
+
+void _getpid(void)
+{
+}
+
+void _kill(void)
+{
+}
+
+void _exit(int status)
+{
+    (void)status;
+    for (int i = 0; i < 6; i++) {
+        gpio_set_led(i, true);
+    }
+    while (1) {
+        gpio_update_leds();
+    }
+}

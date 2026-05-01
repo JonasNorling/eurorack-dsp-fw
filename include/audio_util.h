@@ -58,3 +58,15 @@ static inline float q_highpass(quick_filter_state *state, float factor, float va
     state->v = factor * value + (1.0f - factor) * state->v;
     return value - state->v;
 }
+
+/**
+ * Pick a non-integer position from a lookup table or delay line
+ */
+static inline float linterpolate(const float* table, size_t tablelen, float pos)
+{
+    const unsigned intpos = (unsigned)pos;
+    const float s0 = table[intpos % tablelen];
+    const float s1 = table[(intpos + 1) % tablelen];
+    const float frac = pos - intpos;
+    return s0 * (1.0f - frac) + s1 * frac;
+}

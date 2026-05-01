@@ -5,6 +5,7 @@ OBJCOPY=$(TOOLCHAIN_DIR)/arm-none-eabi-objcopy
 
 INCLUDE_DIR=include
 CPPFLAGS=\
+    -MP -MMD \
     -DSTM32G474xx \
 	-I$(INCLUDE_DIR) \
 	-Istm32-cube/Drivers/CMSIS/Include \
@@ -25,6 +26,7 @@ SRCS += src/dsp.c
 SRCS += src/analog_in.c
 SRCS += src/analog_out.c
 SRCS += src/biquad.c
+SRCS += src/lut_data.c
 
 SRCS += src/system_stm32g4xx.c
 SRCS += src/stm32g4xx_it.c
@@ -44,16 +46,30 @@ SRCS += stm32-cube/Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_adc.c
 SRCS += stm32-cube/Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_adc_ex.c
 SRCS += stm32-cube/Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_dac.c
 SRCS += stm32-cube/Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_dac_ex.c
-SRCS += src/startup_stm32g474retx.s
 
-OBJS := $(SRCS:%.c=$(BUILDDIR)/%.o)
+ASM_SRCS += src/startup_stm32g474retx.s
+
+OBJS := $(SRCS:%.c=$(BUILDDIR)/%.o) $(ASM_SRCS:%.s=$(BUILDDIR)/%.o)
+DEP_FILES = $(SRCS:%.c=$(BUILDDIR)/%.d)
 
 all: $(BUILDDIR)/application.elf
 
 clean:
 	rm -rf build
 
+.PHONY: all clean
+
+src/lut_data.c:
+	tools/make_lut.py $@
+
+-include $(DEP_FILES)
+
 $(BUILDDIR)/%.o: %.c
+	@echo CC $@
+	@mkdir -p $(dir $@)
+	@$(CC) -c $(CPPFLAGS) $(CFLAGS) -o $@ $<
+
+$(BUILDDIR)/%.o: %.s
 	@echo CC $@
 	@mkdir -p $(dir $@)
 	@$(CC) -c $(CPPFLAGS) $(CFLAGS) -o $@ $<
