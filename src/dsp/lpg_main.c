@@ -138,7 +138,7 @@ static void _lpg_main(
 	}
 }
 
-void dsp_do(const frame_t * const restrict in, frame_t * const restrict out)
+void lpg_main(const frame_t * const restrict in, frame_t * const restrict out)
 {
 	const float pot[] = {
 		analog_in_get(0),
@@ -169,7 +169,7 @@ void dsp_do(const frame_t * const restrict in, frame_t * const restrict out)
 	_lpg_main(
 		in,
 		out,
-		trigger_pulse > 0.3f || !gpio_get(PIN_BUTTON_1),
+		trigger_pulse > 0.3f || !gpio_get(PIN_BUTTON_2),
 		envelope_open,
 		attack_time_ms,
 		decay_time_ms,

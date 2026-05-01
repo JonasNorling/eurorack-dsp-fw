@@ -14,14 +14,19 @@
 
 static void SystemClock_Config(void);
 
+typedef enum {
+    MODEL_LPG,
+    MODEL_END
+} model_t;
+
 static void lamp_test(void)
 {
     uint32_t t0 = HAL_GetTick();
     uint32_t dt = HAL_GetTick() - t0;
-    while (dt < 1000) {
+    while (dt < 500) {
         dt = HAL_GetTick() - t0;
         for (unsigned i = 0; i < 6; i++) {
-            gpio_set_led(i, dt > i * 100);
+            gpio_set_led(i, dt > i * 60);
         }
         gpio_update_leds();
         __WFI();
@@ -58,7 +63,7 @@ int main(void)
         assert(false);
     }
 
-    if (audio_run(dsp_do) != 0) {
+    if (audio_run(lpg_main) != 0) {
         printf("Error: audio streaming failed\r\n");
         assert(false);
     }
@@ -70,11 +75,40 @@ int main(void)
     DWT->CYCCNT = 0;
 
     int i = 0;
+    uint32_t button_press_start = UINT32_MAX;
+    model_t model = MODEL_LPG;
     while (1) {
-        const uint32_t t = HAL_GetTick();
+        const uint32_t t0 = HAL_GetTick();
 
-        while (HAL_GetTick() < t + 100) {
+        while (true) {
+            const uint32_t t = HAL_GetTick();
+            if (t >= t0 + 100) {
+                break;
+            }
+
             gpio_update_leds();
+
+            if (gpio_get(PIN_BUTTON_2)) {
+                if (button_press_start == 0) {
+                    // Already handled, ignore
+                }
+                else if (t > button_press_start + 50) {
+                    button_press_start = 0;
+                    model = (model + 1) % MODEL_END;
+                    switch (model) {
+                        case MODEL_LPG:
+                            audio_set_dsp_function(lpg_main);
+                            break;
+                        case MODEL_END:
+                            break;
+                    }
+                }
+                else {
+                    button_press_start = t;
+                }
+            } else {
+                button_press_start = UINT32_MAX;
+            }
             __WFI();
         }
 

@@ -23,7 +23,7 @@ SRCS += src/system/serial_log.c
 SRCS += src/system/audio_codec.c
 SRCS += src/system/analog_in.c
 SRCS += src/system/analog_out.c
-SRCS += src/dsp/dsp.c
+SRCS += src/dsp/lpg_main.c
 SRCS += src/dsp/biquad.c
 SRCS += src/dsp/lut_data.c
 

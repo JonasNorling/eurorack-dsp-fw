@@ -156,6 +156,11 @@ int audio_run(void(*dsp_fn)(const frame_t * const in, frame_t *const out))
     return 0;
 }
 
+void audio_set_dsp_function(void(*dsp_fn)(const frame_t * const in, frame_t *const out))
+{
+    s_dsp_fn = dsp_fn;
+}
+
 void audio_dump_stats(void)
 {
     #define CPU_FREQ 159744000
