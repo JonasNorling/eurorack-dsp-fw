@@ -3,33 +3,32 @@ CC=$(TOOLCHAIN_DIR)/arm-none-eabi-gcc
 SIZE=$(TOOLCHAIN_DIR)/arm-none-eabi-size
 OBJCOPY=$(TOOLCHAIN_DIR)/arm-none-eabi-objcopy
 
-INCLUDE_DIR=include
 CPPFLAGS=\
     -MP -MMD \
     -DSTM32G474xx \
-	-I$(INCLUDE_DIR) \
+	-Iinclude -Iinclude/system \
 	-Istm32-cube/Drivers/CMSIS/Include \
 	-Istm32-cube/Drivers/STM32G4xx_HAL_Driver/Inc \
 	-Istm32-cube/Drivers/CMSIS/Device/ST/STM32G4xx/Include \
 	-Istm32-cube/Drivers/BSP/STM32G474E-EVAL
 
 CFLAGS=-mcpu=cortex-m4 -mfloat-abi=hard -mthumb -Wall -Wextra -Werror -g -Og
-LDFLAGS=-Wl,-Tsrc/STM32G474CCTX_FLASH.ld --specs=nano.specs --specs=nosys.specs
+LDFLAGS=-Wl,-Tsrc/system/STM32G474CCTX_FLASH.ld --specs=nano.specs --specs=nosys.specs
 
 BUILDDIR=build
 
-SRCS += src/main.c
-SRCS += src/gpio.c
-SRCS += src/serial_log.c
-SRCS += src/audio_codec.c
-SRCS += src/dsp.c
-SRCS += src/analog_in.c
-SRCS += src/analog_out.c
-SRCS += src/biquad.c
-SRCS += src/lut_data.c
+SRCS += src/system/main.c
+SRCS += src/system/gpio.c
+SRCS += src/system/serial_log.c
+SRCS += src/system/audio_codec.c
+SRCS += src/system/analog_in.c
+SRCS += src/system/analog_out.c
+SRCS += src/dsp/dsp.c
+SRCS += src/dsp/biquad.c
+SRCS += src/dsp/lut_data.c
 
-SRCS += src/system_stm32g4xx.c
-SRCS += src/stm32g4xx_it.c
+SRCS += src/system/system_stm32g4xx.c
+SRCS += src/system/stm32g4xx_it.c
 
 SRCS += stm32-cube/Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal.c
 SRCS += stm32-cube/Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_gpio.c
@@ -47,7 +46,7 @@ SRCS += stm32-cube/Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_adc_ex.c
 SRCS += stm32-cube/Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_dac.c
 SRCS += stm32-cube/Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_dac_ex.c
 
-ASM_SRCS += src/startup_stm32g474retx.s
+ASM_SRCS += src/system/startup_stm32g474retx.s
 
 OBJS := $(SRCS:%.c=$(BUILDDIR)/%.o) $(ASM_SRCS:%.s=$(BUILDDIR)/%.o)
 DEP_FILES = $(SRCS:%.c=$(BUILDDIR)/%.d)
@@ -59,7 +58,7 @@ clean:
 
 .PHONY: all clean
 
-src/lut_data.c:
+src/dsp/lut_data.c:
 	tools/make_lut.py $@
 
 -include $(DEP_FILES)

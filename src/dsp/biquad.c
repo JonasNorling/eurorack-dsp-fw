@@ -1,5 +1,5 @@
-#include "biquad.h"
-#include "lut_fn.h"
+#include "dsp/biquad.h"
+#include "dsp/lut_fn.h"
 #include <math.h>
 
 /*

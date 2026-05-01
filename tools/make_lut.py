@@ -28,7 +28,7 @@ def format_lut(data: list, name) -> str:
 def main():
     outfile = sys.argv[1]
     with open(outfile, "w") as f:
-        print('#include "lut_data.h"', file=f)
+        print('#include "dsp/lut_data.h"', file=f)
         print(file=f)
         print(format_lut(sin_lut(), "lut_sin_table"), file=f)
 

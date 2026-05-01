@@ -3,14 +3,14 @@
 #include <unistd.h>
 #include <assert.h>
 
-#include "stm32g4xx_hal.h"
 #include "utils.h"
-#include "serial_log.h"
-#include "audio_codec.h"
-#include "dsp.h"
-#include "gpio.h"
-#include "analog_in.h"
-#include "analog_out.h"
+#include "stm32g4xx_hal.h"
+#include "system/serial_log.h"
+#include "system/audio_codec.h"
+#include "system/gpio.h"
+#include "system/analog_in.h"
+#include "system/analog_out.h"
+#include "dsp/dsp.h"
 
 static void SystemClock_Config(void);
 

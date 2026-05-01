@@ -1,9 +1,9 @@
-#include "dsp.h"
+#include "dsp/dsp.h"
 #include "audio.h"
 #include "utils.h"
-#include "audio_util.h"
+#include "dsp/audio_util.h"
 #include "analog_in.h"
-#include "biquad.h"
+#include "dsp/biquad.h"
 #include "gpio.h"
 #include "analog_out.h"
 
