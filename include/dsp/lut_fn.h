@@ -13,7 +13,7 @@ static inline float lut_sin(float v)
     // Assuming we won't need to go beyond 2pi
     assert(v >= 0 && v <= TWOPI);
     // THe LUT includes an extra position for v=2pi
-    float pos = (ARRAY_SIZE(lut_sin_table) - 1) * v / TWOPI;
+    float pos = ((ARRAY_SIZE(lut_sin_table) - 1) / TWOPI) * v;
     return linterpolate(lut_sin_table, ARRAY_SIZE(lut_sin_table), pos);
 }
 
