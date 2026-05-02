@@ -16,6 +16,7 @@ static void SystemClock_Config(void);
 
 typedef enum {
     MODEL_LPG,
+    MODEL_LFO,
     MODEL_END
 } model_t;
 
@@ -88,7 +89,7 @@ int main(void)
 
             gpio_update_leds();
 
-            if (gpio_get(PIN_BUTTON_2)) {
+            if (!gpio_get(PIN_BUTTON_2)) {
                 if (button_press_start == 0) {
                     // Already handled, ignore
                 }
@@ -97,7 +98,12 @@ int main(void)
                     model = (model + 1) % MODEL_END;
                     switch (model) {
                         case MODEL_LPG:
+                            printf("Mode: LPG\r\n");
                             audio_set_dsp_function(lpg_main);
+                            break;
+                        case MODEL_LFO:
+                            printf("Mode: LFO\r\n");
+                            audio_set_dsp_function(lfo_main);
                             break;
                         case MODEL_END:
                             break;

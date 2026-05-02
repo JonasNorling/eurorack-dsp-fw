@@ -66,7 +66,7 @@ int analog_out_init(void)
 void analog_out_set(unsigned c1, unsigned c2, unsigned c3)
 {
     // Invert 12-bit values to compensate for inverting opamp amplifier
-    HAL_DAC_SetValue(&s_hdac1, DAC_CHANNEL_1, DAC_ALIGN_12B_R, 0x1000-c1);
-    HAL_DAC_SetValue(&s_hdac1, DAC_CHANNEL_2, DAC_ALIGN_12B_R, 0x1000-c2);
-    HAL_DAC_SetValue(&s_hdac2, DAC_CHANNEL_1, DAC_ALIGN_12B_R, 0x1000-c3);
+    HAL_DAC_SetValue(&s_hdac1, DAC_CHANNEL_1, DAC_ALIGN_12B_R, 0xfff-c1);
+    HAL_DAC_SetValue(&s_hdac1, DAC_CHANNEL_2, DAC_ALIGN_12B_R, 0xfff-c2);
+    HAL_DAC_SetValue(&s_hdac2, DAC_CHANNEL_1, DAC_ALIGN_12B_R, 0xfff-c3);
 }
