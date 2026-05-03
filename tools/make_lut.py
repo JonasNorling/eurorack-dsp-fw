@@ -8,9 +8,8 @@ import math
 def sin_lut(length=256) -> list:
     # Create a sine lookup table of the specified length.
     # We go full floating point from 0..2pi here because we're not tight on flash
-    # space and we're going to use this in a float context anyway. Add an extra
-    # entry to make it easy to interpolate up to 2pi.
-    return [math.sin(2 * math.pi * i/length) for i in range(length+1)]
+    # space and we're going to use this in a float context anyway.
+    return [math.sin(2 * math.pi * i/length) for i in range(length)]
 
 def format_lut(data: list, name) -> str:
     s = f"const float {name}[{len(data)}] = {{\n"
@@ -20,8 +19,6 @@ def format_lut(data: list, name) -> str:
         s += f" {v:.12f},"
         if i % 8 == 7:
             s += "\n"
-    if i % 8 != 0:
-        s += ";\n"
     s += "\n};"
     return s
 
