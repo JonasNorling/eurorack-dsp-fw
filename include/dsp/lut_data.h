@@ -1,3 +1,3 @@
 #pragma once
 
-extern const float lut_sin_table[256];
+extern const float lut_sin_table[1024];

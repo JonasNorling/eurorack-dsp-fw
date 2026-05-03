@@ -5,7 +5,7 @@
 import sys
 import math
 
-def sin_lut(length=256) -> list:
+def sin_lut(length=1024) -> list:
     # Create a sine lookup table of the specified length.
     # We go full floating point from 0..2pi here because we're not tight on flash
     # space and we're going to use this in a float context anyway.
@@ -16,7 +16,7 @@ def format_lut(data: list, name) -> str:
     for i, v in enumerate(data):
         if i % 8 == 0:
             s += "   "
-        s += f" {v:.12f},"
+        s += f" {v:.20},"
         if i % 8 == 7:
             s += "\n"
     s += "\n};"
