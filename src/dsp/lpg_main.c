@@ -169,7 +169,7 @@ void lpg_main(const frame_t * const restrict in, frame_t * const restrict out)
 	_lpg_main(
 		in,
 		out,
-		trigger_pulse > 0.3f || !gpio_get(PIN_BUTTON_2),
+		trigger_pulse > 0.3f || !gpio_get(PIN_BUTTON_1),
 		envelope_open,
 		attack_time_ms,
 		decay_time_ms,
