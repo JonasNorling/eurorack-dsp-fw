@@ -126,14 +126,20 @@ static void _lpg_main(
 	}
 
 	const float env_open_sq = envelope_open * envelope_open + lpg_state.env_value * lpg_state.env_value;
-	float cutoff = CLAMP(env_open_sq * env_open_sq, 0.001f, 3.1f);
+	float cutoff = CLAMP(env_open_sq * env_open_sq, HZ2OMEGA(5), HZ2OMEGA(20000));
+	q_factor *= sqrtf(cutoff);  // Rein in resonance at low frequency, it got unpleasantly boomy
 	bq_make_lowpass(&lpg_state.lp_filter_state[0].coeffs, cutoff, q_factor);
 	lpg_state.lp_filter_state[1].coeffs = lpg_state.lp_filter_state[0].coeffs;
 
 	frame_t filter_out[FRAMES_PER_BLOCK];
     for (int i = 0; i < FRAMES_PER_BLOCK; i++) {
-        filter_out[i].s[0] = bq_process(in[i].s[0], &lpg_state.lp_filter_state[0]);
-        filter_out[i].s[1] = bq_process(in[i].s[1], &lpg_state.lp_filter_state[1]);
+		float s[2] = {in[i].s[0], in[i].s[1]};
+		if (cutoff < HZ2OMEGA(40)) {
+			s[0] *= cutoff/HZ2OMEGA(40);
+			s[1] *= cutoff/HZ2OMEGA(40);
+		}
+        filter_out[i].s[0] = bq_process(s[0], &lpg_state.lp_filter_state[0]);
+        filter_out[i].s[1] = bq_process(s[1], &lpg_state.lp_filter_state[1]);
     }
 
 	// Cross fade between VCA, VCA*VCF, and VCF behaviour
@@ -164,7 +170,7 @@ void lpg_main(const frame_t * const restrict in, frame_t * const restrict out)
 	const float filt_vca_mix = pot[0];
 	const float decay_time_ms = RAMP(pot[2] * pot[2] * pot[2], 10.0f, 5000.0f);
 	const float q_factor = RAMP(pot[3], 0.1f, 10.0f);
-    const float distorsion = RAMP(pot[1], 0.0f, 1.1f);
+    const float distortion = RAMP(pot[1], 0.0f, 1.1f);
 
 	const float trigger_pulse = CLAMP(q_highpass(&lpg_state.trigger_filter, 0.05, cv[0]), 0.0f, 1.0f);
 	const float envelope_open = cv[1];
@@ -189,10 +195,10 @@ void lpg_main(const frame_t * const restrict in, frame_t * const restrict out)
     gpio_set_led(5, cv[0] > 0.5f);
     analog_out_set(trigger_pulse * 4095, pot[0] * 4095, lpg_state.env_value * 4095);
     for (int i = 0; i < FRAMES_PER_BLOCK; i++) {
-        out[i].s[0] = tube_distortion(out[i].s[0], distorsion);
-        out[i].s[1] = tube_distortion(out[i].s[1], distorsion);
+        update_statistics(&out_stats, out[i]);
+        out[i].s[0] = tube_distortion(out[i].s[0], distortion);
+        out[i].s[1] = tube_distortion(out[i].s[1], distortion);
         out[i].s[0] = saturate_soft(out[i].s[0]);
         out[i].s[1] = saturate_soft(out[i].s[1]);
-        update_statistics(&out_stats, out[i]);
     }
 }
