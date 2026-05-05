@@ -113,7 +113,15 @@ static void _lpg_main(
 	}
 	else {
 		// Decay phase
-		const float decay_step = MS_PER_FRAME / decay_time_ms;
+		float decay_step = MS_PER_FRAME / decay_time_ms;
+		if (lpg_state.env_value > 0.5) {
+			// Initial fast decay
+			decay_step *= 2;
+		}
+		else if (lpg_state.env_value < 0.1) {
+			// Final long tail
+			decay_step *= 0.5f;
+		}
 		lpg_state.env_value = CLAMP(lpg_state.env_value - decay_step, 0.0f, 1.0f);
 	}
 
