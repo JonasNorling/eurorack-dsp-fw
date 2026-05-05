@@ -1,5 +1,6 @@
 #pragma once
 #include <stddef.h>
+#include "dsp/audio_util.h"
 
 /**
  * Biquad coefficients for
@@ -46,9 +47,14 @@ void bq_make_bandpass(bq_coeffs* c, float w0, float q);
 static inline float bq_process(float in, bq_state* state)
 {
     bq_coeffs *c = &state->coeffs;
-    const float y = c->b0*in +
+    float y = c->b0*in +
         c->b1*state->X[0] + c->b2*state->X[1] -
         c->a1*state->Y[0] - c->a2*state->Y[1];
+
+    // Keep the filter state from running away which typically happens when
+    // changing the coefficients quickly.
+    y = CLAMP(y, SAMPLE_MIN*2.0f, SAMPLE_MAX*2.0f);
+
     state->X[1] = state->X[0];
     state->X[0] = in;
     state->Y[1] = state->Y[0];

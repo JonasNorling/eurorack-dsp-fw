@@ -28,7 +28,7 @@ static inline float saturate_soft(float x)
     }
 
     x *= (1.0f/SAMPLE_MAX);
-    return SAMPLE_MAX * ((1.5f) * x - 0.5f * x * x * x);
+    return SAMPLE_MAX * (1.5f * x - 0.5f * x * x * x);
 }
 
 static inline float tube_distortion(float _x, float depth)
