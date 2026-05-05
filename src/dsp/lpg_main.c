@@ -126,7 +126,8 @@ static void _lpg_main(
 	}
 
 	const float env_open_sq = envelope_open * envelope_open + lpg_state.env_value * lpg_state.env_value;
-	float cutoff = CLAMP(env_open_sq * env_open_sq, HZ2OMEGA(5), HZ2OMEGA(20000));
+	float cutoff = RAMP(env_open_sq * env_open_sq, HZ2OMEGA(5), HZ2OMEGA(20000));
+	cutoff = CLAMP(cutoff, 0.0f, M_PIf);
 	q_factor *= sqrtf(cutoff);  // Rein in resonance at low frequency, it got unpleasantly boomy
 	bq_make_lowpass(&lpg_state.lp_filter_state[0].coeffs, cutoff, q_factor);
 	lpg_state.lp_filter_state[1].coeffs = lpg_state.lp_filter_state[0].coeffs;

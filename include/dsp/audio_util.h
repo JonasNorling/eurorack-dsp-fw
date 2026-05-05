@@ -3,6 +3,11 @@
 #include <stdbool.h>
 #include "audio.h"
 
+#define M_PIf 3.14159265358979323846f	/* pi */
+#define M_PI_2f 1.57079632679489661923f	/* pi/2 */
+#define TWOPI (2.0f * M_PIf)
+
+
 #define CLAMP(v, min, max) (v) > (max) ? (max) : ((v) < (min) ? (min) : (v))
 #define NYQUIST (SAMPLE_RATE / 2)
 #define RAMP(v, start, end) ((end) * (v) + (start * (1.0f-(v))))

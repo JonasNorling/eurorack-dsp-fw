@@ -4,10 +4,6 @@
 #include "math.h"
 #include "assert.h"
 
-# define M_PIf		3.14159265358979323846f	/* pi */
-# define M_PI_2f	1.57079632679489661923f	/* pi/2 */
-#define TWOPI (2.0f * M_PIf)
-
 static inline float lut_sin(float v)
 {
     float pos = ((ARRAY_SIZE(lut_sin_table) - 1) / TWOPI) * v;
