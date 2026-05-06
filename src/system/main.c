@@ -76,7 +76,8 @@ int main(void)
     DWT->CYCCNT = 0;
 
     int i = 0;
-    uint32_t button_press_start = UINT32_MAX;
+    int button_debounce_counter = 0;
+    bool button_handled = false;
     model_t model = MODEL_LPG;
     while (1) {
         const uint32_t t0 = HAL_GetTick();
@@ -90,30 +91,34 @@ int main(void)
             gpio_update_leds();
 
             if (!gpio_get(PIN_BUTTON_2)) {
-                if (button_press_start == 0) {
-                    // Already handled, ignore
-                }
-                else if (t > button_press_start + 50) {
-                    button_press_start = 0;
+                // Pressed
+                button_debounce_counter = MIN(button_debounce_counter + 1, 100);
+                if (button_debounce_counter >= 100 && !button_handled) {
+                    button_handled = true;
                     model = (model + 1) % MODEL_END;
                     switch (model) {
                         case MODEL_LPG:
                             printf("Mode: LPG\r\n");
                             audio_set_dsp_function(lpg_main);
+                            gpio_set_led(0, true);
                             break;
                         case MODEL_LFO:
                             printf("Mode: LFO\r\n");
                             audio_set_dsp_function(lfo_main);
+                            gpio_set_led(1, true);
                             break;
                         case MODEL_END:
                             break;
                     }
                 }
-                else {
-                    button_press_start = t;
-                }
             } else {
-                button_press_start = UINT32_MAX;
+                button_debounce_counter = MAX(button_debounce_counter - 1, 0);
+                if (button_debounce_counter == 0 && button_handled) {
+                    button_handled = false;
+                    gpio_set_led(0, false);
+                    gpio_set_led(1, false);
+                    gpio_set_led(2, false);
+                }
             }
             __WFI();
         }
