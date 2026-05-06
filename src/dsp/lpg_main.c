@@ -54,7 +54,6 @@ static struct {
 	bq_state lp_filter_state[2];
 	quick_filter_state trigger_filter;
 
-	float env_attack_target_value;  // Stop attack phase when reaching this value
 	float env_value;  // Current value 0..1 of the envelope
 } lpg_state;
 
@@ -91,39 +90,27 @@ static struct {
 static void _lpg_main(
 	const frame_t * const restrict in,
 	frame_t * const restrict out,
-	bool trigger,
+	float trigger_pulse,
 	float envelope_open,
-	float attack_time_ms,
 	float decay_time_ms,
 	float filt_vca_mix,
 	float q_factor
 )
 {
-	if (trigger) {
-		lpg_state.env_attack_target_value = 1.0f;
+	// Attack
+	lpg_state.env_value = lpg_state.env_value + trigger_pulse * 0.2f * FRAMES_PER_BLOCK;
+
+	// Decay
+	float decay_step = MS_PER_FRAME / decay_time_ms;
+	if (lpg_state.env_value > 0.5) {
+		// Initial fast decay
+		decay_step *= 2;
 	}
-	if (lpg_state.env_attack_target_value != 0.0f) {
-		// Attack phase
-		const float attack_step = MS_PER_FRAME / attack_time_ms;
-		lpg_state.env_value = CLAMP(lpg_state.env_value + attack_step, 0.0f, 1.0f);
-		if (lpg_state.env_value >= lpg_state.env_attack_target_value) {
-			// End attack phase
-			lpg_state.env_attack_target_value = 0.0f;
-		}
+	else if (lpg_state.env_value < 0.1) {
+		// Final long tail
+		decay_step *= 0.5f;
 	}
-	else {
-		// Decay phase
-		float decay_step = MS_PER_FRAME / decay_time_ms;
-		if (lpg_state.env_value > 0.5) {
-			// Initial fast decay
-			decay_step *= 2;
-		}
-		else if (lpg_state.env_value < 0.1) {
-			// Final long tail
-			decay_step *= 0.5f;
-		}
-		lpg_state.env_value = CLAMP(lpg_state.env_value - decay_step, 0.0f, 1.0f);
-	}
+	lpg_state.env_value = CLAMP(lpg_state.env_value - decay_step, 0.0f, 1.0f);
 
 	const float env_open_sq = envelope_open * envelope_open + lpg_state.env_value * lpg_state.env_value;
 	float cutoff = RAMP(env_open_sq * env_open_sq, HZ2OMEGA(5), HZ2OMEGA(20000));
@@ -167,13 +154,13 @@ void lpg_main(const frame_t * const restrict in, frame_t * const restrict out)
 		analog_in_get(5) * 2.0f - 1.0f,
 	};
 
-	const float attack_time_ms = 2.0f;
 	const float filt_vca_mix = pot[0];
 	const float decay_time_ms = RAMP(pot[2] * pot[2] * pot[2], 10.0f, 5000.0f);
 	const float q_factor = RAMP(pot[3], 0.1f, 10.0f);
     const float distortion = RAMP(pot[1], 0.0f, 1.1f);
 
-	const float trigger_pulse = CLAMP(q_highpass(&lpg_state.trigger_filter, 0.05, cv[0]), 0.0f, 1.0f);
+	const bool trigger_button = !gpio_get(PIN_BUTTON_1);
+	const float trigger_pulse = CLAMP(q_highpass(&lpg_state.trigger_filter, 0.05, cv[0]) + trigger_button, 0.0f, 1.0f);
 	const float envelope_open = cv[1];
 
     gpio_set_led(3, trigger_pulse > 0.01f);
@@ -184,9 +171,8 @@ void lpg_main(const frame_t * const restrict in, frame_t * const restrict out)
 	_lpg_main(
 		in,
 		out,
-		trigger_pulse > 0.3f || !gpio_get(PIN_BUTTON_1),
+		trigger_pulse,
 		envelope_open,
-		attack_time_ms,
 		decay_time_ms,
 		filt_vca_mix,
 		q_factor
