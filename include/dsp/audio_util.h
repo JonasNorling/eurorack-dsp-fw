@@ -89,3 +89,22 @@ static inline float linterpolate(const float* table, size_t tablelen, float pos)
     const float frac = pos - intpos;
     return s0 * (1.0f - frac) + s1 * frac;
 }
+
+typedef struct {
+    float last_value;
+} slope_state;
+
+// Change value by at most slope_limit
+static inline float slope_limit(slope_state *state, float slope_limit, float value)
+{
+    const float delta = value - state->last_value;
+    if (delta > slope_limit) {
+        state->last_value += slope_limit;
+    } else if (-delta > slope_limit) {
+        state->last_value -= slope_limit;
+    }
+    else {
+        state->last_value = value;
+    }
+    return state->last_value;
+}

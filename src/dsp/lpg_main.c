@@ -52,7 +52,8 @@ void dsp_dump_stats(void)
 
 static struct {
 	bq_state lp_filter_state[2];
-	quick_filter_state trigger_filter;
+	quick_filter_state trigger_hp_filter;
+	slope_state trigger_slope_limit;
 
 	float env_value;  // Current value 0..1 of the envelope
 } lpg_state;
@@ -98,7 +99,7 @@ static void _lpg_main(
 )
 {
 	// Attack
-	lpg_state.env_value = lpg_state.env_value + trigger_pulse * 0.2f * FRAMES_PER_BLOCK;
+	lpg_state.env_value = lpg_state.env_value + trigger_pulse * 0.025f * FRAMES_PER_BLOCK;
 
 	// Decay
 	float decay_step = MS_PER_FRAME / decay_time_ms;
@@ -160,8 +161,10 @@ void lpg_main(const frame_t * const restrict in, frame_t * const restrict out)
     const float distortion = RAMP(pot[1], 0.0f, 1.1f);
 
 	const bool trigger_button = !gpio_get(PIN_BUTTON_1);
-	const float trigger_pulse = CLAMP(q_highpass(&lpg_state.trigger_filter, 0.05, cv[0]) + trigger_button, 0.0f, 1.0f);
-	const float envelope_open = cv[1];
+	const float trig_slope = MS_PER_FRAME / 3.0f;  // Minimum 3 ms ramp on trigger
+	float trigger_pulse = slope_limit(&lpg_state.trigger_slope_limit, trig_slope, cv[1] + trigger_button);
+	trigger_pulse = CLAMP(2.0f * q_highpass(&lpg_state.trigger_hp_filter, 0.5f * MS_PER_FRAME, trigger_pulse), 0.0f, 1.0f);
+	const float envelope_open = cv[0];
 
     gpio_set_led(3, trigger_pulse > 0.01f);
     for (int i = 0; i < FRAMES_PER_BLOCK; i++) {
@@ -179,8 +182,8 @@ void lpg_main(const frame_t * const restrict in, frame_t * const restrict out)
 	);
 
     gpio_set_led(4, will_clip(out, FRAMES_PER_BLOCK));
-    gpio_set_led(5, cv[0] > 0.5f);
-    analog_out_set(trigger_pulse * 4095, pot[0] * 4095, lpg_state.env_value * 4095);
+    gpio_set_led(5, cv[1] > 0.5f);
+    analog_out_set(trigger_pulse * 4095, cv[1] * 4095, lpg_state.env_value * 4095);
     for (int i = 0; i < FRAMES_PER_BLOCK; i++) {
         update_statistics(&out_stats, out[i]);
         out[i].s[0] = tube_distortion(out[i].s[0], distortion);
