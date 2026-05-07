@@ -1,4 +1,4 @@
-#include "dsp/dsp.h"
+#include "dsp.h"
 #include "audio.h"
 #include "analog_in.h"
 #include "gpio.h"

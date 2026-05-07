@@ -1,4 +1,4 @@
-#include "dsp/dsp.h"
+#include "dsp.h"
 #include "audio.h"
 #include "utils.h"
 #include "dsp/audio_util.h"

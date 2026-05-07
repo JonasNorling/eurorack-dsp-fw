@@ -1,6 +1,5 @@
 #include "audio_codec.h"
 #include "stm32g4xx_hal.h"
-#include "gpio.h"
 #include "dsp/audio_util.h"
 #include "utils.h"
 #include "priorities.h"
