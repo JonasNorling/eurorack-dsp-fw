@@ -1,7 +1,7 @@
 #pragma once
 #include <stdint.h>
 
-#define FRAMES_PER_BLOCK 2
+#define FRAMES_PER_BLOCK 4
 #define SAMPLE_RATE 48000
 #define MS_PER_FRAME (1000.0f * FRAMES_PER_BLOCK / SAMPLE_RATE)
 #define SAMPLE_MAX ((1 << 23) - 1)

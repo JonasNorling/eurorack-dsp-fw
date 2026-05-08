@@ -50,13 +50,14 @@ void dsp_dump_stats(void)
     memset(&out_stats, 0, sizeof(out_stats));
 }
 
-static struct {
-	bq_state lp_filter_state[2];
+typedef struct {
+	bq_state lp_filter_state;
 	quick_filter_state trigger_hp_filter;
 	slope_state trigger_slope_limit;
 
 	float env_value;  // Current value 0..1 of the envelope
-} lpg_state;
+} lpg_state_t;
+static lpg_state_t lpg_state[2];
 
 /*
  * Lowpass gate implementation.
@@ -89,8 +90,9 @@ static struct {
  */
 
 static void _lpg_main(
-	const frame_t * const restrict in,
-	frame_t * const restrict out,
+	lpg_state_t *state,
+	const float * const restrict in,
+	float * const restrict out,
 	float trigger_pulse,
 	float envelope_open,
 	float decay_time_ms,
@@ -99,36 +101,33 @@ static void _lpg_main(
 )
 {
 	// Attack
-	lpg_state.env_value = lpg_state.env_value + trigger_pulse * 0.025f * FRAMES_PER_BLOCK;
+	state->env_value = state->env_value + trigger_pulse * 0.025f * FRAMES_PER_BLOCK;
 
 	// Decay
 	float decay_step = MS_PER_FRAME / decay_time_ms;
-	if (lpg_state.env_value > 0.5) {
+	if (state->env_value > 0.5) {
 		// Initial fast decay
 		decay_step *= 2;
 	}
-	else if (lpg_state.env_value < 0.1) {
+	else if (state->env_value < 0.1) {
 		// Final long tail
 		decay_step *= 0.5f;
 	}
-	lpg_state.env_value = CLAMP(lpg_state.env_value - decay_step, 0.0f, 1.0f);
+	state->env_value = CLAMP(state->env_value - decay_step, 0.0f, 1.0f);
 
-	const float env_open_sq = envelope_open * envelope_open + lpg_state.env_value * lpg_state.env_value;
+	const float env_open_sq = envelope_open * envelope_open + state->env_value * state->env_value;
 	float cutoff = RAMP(env_open_sq * env_open_sq, HZ2OMEGA(5), HZ2OMEGA(20000));
 	cutoff = CLAMP(cutoff, 0.0f, M_PIf);
 	q_factor *= sqrtf(cutoff);  // Rein in resonance at low frequency, it got unpleasantly boomy
-	bq_make_lowpass(&lpg_state.lp_filter_state[0].coeffs, cutoff, q_factor);
-	lpg_state.lp_filter_state[1].coeffs = lpg_state.lp_filter_state[0].coeffs;
+	bq_make_lowpass(&state->lp_filter_state.coeffs, cutoff, q_factor);
 
-	frame_t filter_out[FRAMES_PER_BLOCK];
+	float filter_out[FRAMES_PER_BLOCK];
     for (int i = 0; i < FRAMES_PER_BLOCK; i++) {
-		float s[2] = {in[i].s[0], in[i].s[1]};
+		float s = in[i];
 		if (cutoff < HZ2OMEGA(40)) {
-			s[0] *= cutoff/HZ2OMEGA(40);
-			s[1] *= cutoff/HZ2OMEGA(40);
+			s *= cutoff/HZ2OMEGA(40);
 		}
-        filter_out[i].s[0] = bq_process(s[0], &lpg_state.lp_filter_state[0]);
-        filter_out[i].s[1] = bq_process(s[1], &lpg_state.lp_filter_state[1]);
+        filter_out[i] = bq_process(s, &state->lp_filter_state);
     }
 
 	// Cross fade between VCA, VCA*VCF, and VCF behaviour
@@ -136,59 +135,80 @@ static void _lpg_main(
 		// FIXME: Change gain (and possibly filter) smoothly over whole buffer, this might get too steppy
 		const float filter_mix = CLAMP(filt_vca_mix * 2.0f, 0.0f, 1.0f);  // CCW 0 - 1 - 1 CW
 		const float gain_mix = CLAMP(filt_vca_mix * 2.0f - 1.0f, 0.0f, 1.0f);  // CCW 0 - 0 - 1 CW
-		out[i].s[0] = RAMP(filter_mix, in[i].s[0], filter_out[i].s[0]) * RAMP(gain_mix, env_open_sq, 1.0f);
-		out[i].s[1] = RAMP(filter_mix, in[i].s[1], filter_out[i].s[1]) * RAMP(gain_mix, env_open_sq, 1.0f);
+		out[i] = RAMP(filter_mix, in[i], filter_out[i]) * RAMP(gain_mix, env_open_sq, 1.0f);
 	}
 }
 
 void lpg_main(const frame_t * const restrict in, frame_t * const restrict out)
 {
 	const float pot[] = {
-		analog_in_get(0),
-		analog_in_get(1),
-		analog_in_get(2),
-		analog_in_get(3),
+		analog_in_get(0),  // VCA-VCF balance
+		analog_in_get(1),  // Left channel decay time
+		analog_in_get(2),  // Right channel decay time
+		analog_in_get(3),  // Filter Q factor
 	};
     // Make CV inputs ±1.0 centered at 0V
 	const float cv[] = {
-		analog_in_get(4) * 2.0f - 1.0f,
-		analog_in_get(5) * 2.0f - 1.0f,
+		analog_in_get(4) * 2.0f - 1.0f,  // Left channel open
+		analog_in_get(5) * 2.0f - 1.0f,  // Left channel trigger
+		analog_in_get(6) * 2.0f - 1.0f,  // Right channel open
+		analog_in_get(7) * 2.0f - 1.0f,  // Right channel trigger
 	};
 
 	const float filt_vca_mix = pot[0];
-	const float decay_time_ms = RAMP(pot[2] * pot[2] * pot[2], 10.0f, 5000.0f);
+	const float decay_time_ms[2] = {
+		RAMP(pot[1] * pot[1] * pot[1], 10.0f, 5000.0f),
+		RAMP(pot[2] * pot[2] * pot[2], 10.0f, 5000.0f)
+	};
 	const float q_factor = RAMP(pot[3], 0.1f, 10.0f);
-    const float distortion = RAMP(pot[1], 0.0f, 1.1f);
+	const float envelope_open[2] = {cv[0], cv[2]};
+	const float trigger_cv[2] = {cv[1], cv[3]};
 
 	const bool trigger_button = !gpio_get(PIN_BUTTON_1);
 	const float trig_slope = MS_PER_FRAME / 3.0f;  // Minimum 3 ms ramp on trigger
-	float trigger_pulse = slope_limit(&lpg_state.trigger_slope_limit, trig_slope, cv[1] + trigger_button);
-	trigger_pulse = CLAMP(2.0f * q_highpass(&lpg_state.trigger_hp_filter, 0.5f * MS_PER_FRAME, trigger_pulse), 0.0f, 1.0f);
-	const float envelope_open = cv[0];
 
-    gpio_set_led(3, trigger_pulse > 0.01f);
-    for (int i = 0; i < FRAMES_PER_BLOCK; i++) {
-        update_statistics(&in_stats, in[i]);
-    }
+	float trigger_input[2];
+	float trigger_pulse[2];
 
-	_lpg_main(
-		in,
-		out,
-		trigger_pulse,
-		envelope_open,
-		decay_time_ms,
-		filt_vca_mix,
-		q_factor
-	);
+	for (int ch = 0; ch < 2; ch++) {
+		trigger_input[ch] = slope_limit(
+			&lpg_state[ch].trigger_slope_limit,
+			trig_slope,
+			trigger_cv[ch] + trigger_button);
+		trigger_pulse[ch] = CLAMP(
+			2.0f * q_highpass(&lpg_state[ch].trigger_hp_filter, 0.5f * MS_PER_FRAME, trigger_input[ch]),
+			0.0f, 1.0f);
 
-    gpio_set_led(4, will_clip(out, FRAMES_PER_BLOCK));
-    gpio_set_led(5, cv[1] > 0.5f);
-    analog_out_set(trigger_pulse * 4095, cv[1] * 4095, lpg_state.env_value * 4095);
-    for (int i = 0; i < FRAMES_PER_BLOCK; i++) {
+		float in_buf[FRAMES_PER_BLOCK];
+		float out_buf[FRAMES_PER_BLOCK];
+		for (int i = 0; i < FRAMES_PER_BLOCK; i++) {
+			in_buf[i] = in[i].s[ch];
+		}
+
+		_lpg_main(
+			&lpg_state[ch],
+			in_buf,
+			out_buf,
+			trigger_pulse[ch],
+			envelope_open[ch],
+			decay_time_ms[ch],
+			filt_vca_mix,
+			q_factor
+		);
+
+		for (int i = 0; i < FRAMES_PER_BLOCK; i++) {
+			out[i].s[ch] = saturate_soft(out_buf[i]);
+		}
+	}
+
+    gpio_set_led(0, trigger_pulse[0] > 0.01f);
+	gpio_set_led(1, trigger_input[0] > 0.5f);
+    gpio_set_led(3, trigger_pulse[1] > 0.01f);
+    gpio_set_led(4, trigger_input[1] > 0.5f);
+    analog_out_set(trigger_pulse[0] * 4095, 0, trigger_pulse[1] * 4095);
+
+	for (int i = 0; i < FRAMES_PER_BLOCK; i++) {
+		update_statistics(&in_stats, in[i]);
         update_statistics(&out_stats, out[i]);
-        out[i].s[0] = tube_distortion(out[i].s[0], distortion);
-        out[i].s[1] = tube_distortion(out[i].s[1], distortion);
-        out[i].s[0] = saturate_soft(out[i].s[0]);
-        out[i].s[1] = saturate_soft(out[i].s[1]);
     }
 }
