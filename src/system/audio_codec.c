@@ -34,7 +34,7 @@ static SAI_HandleTypeDef s_hsai_tx = {
         .OutputDrive = SAI_OUTPUTDRIVE_ENABLE,
         .NoDivider = SAI_MASTERDIVIDER_ENABLE,
         .MckOverSampling = SAI_MCK_OVERSAMPLING_DISABLE,
-        .FIFOThreshold = SAI_FIFOTHRESHOLD_HF,
+        .FIFOThreshold = SAI_FIFOTHRESHOLD_EMPTY,  // Store no data in the hardware FIFO
         .AudioFrequency = SAI_AUDIO_FREQUENCY_48K,
         .MckOutput = SAI_MCK_OUTPUT_ENABLE,
         .SynchroExt = SAI_SYNCEXT_DISABLE,
@@ -52,7 +52,7 @@ static SAI_HandleTypeDef s_hsai_rx = {
         .OutputDrive = SAI_OUTPUTDRIVE_DISABLE,
         .NoDivider = SAI_MASTERDIVIDER_ENABLE,
         .MckOverSampling = SAI_MCK_OVERSAMPLING_DISABLE,
-        .FIFOThreshold = SAI_FIFOTHRESHOLD_HF,
+        .FIFOThreshold = SAI_FIFOTHRESHOLD_EMPTY,  // Let DMA pick the sample immediately
         .AudioFrequency = SAI_AUDIO_FREQUENCY_48K,
         .MckOutput = SAI_MCK_OUTPUT_DISABLE,
         .SynchroExt = SAI_SYNCEXT_DISABLE,
@@ -178,10 +178,16 @@ int audio_run(void(*dsp_fn)(const frame_t * const in, frame_t *const out))
     printf("Starting I2S streaming\r\n");
     
     // Start RX first so we're guaranteed to receive the first word when we start
-    // transmitting and don't start out of sync.
+    // transmitting and don't start out of sync. We'd like to keep the RX and TX buffers
+    // in sync so that we can work with only the RX DMA interrupt. The I2S FIFO
+    // thresholds are set to make DMA transfer the data as soon as possible instead of
+    // letting it steep in the hardware FIFO for a while.
     if (HAL_SAI_Receive_DMA(&s_hsai_rx, (uint8_t*)s_in_buffer, ARRAY_SIZE(s_out_buffer)) != HAL_OK) {
         return 1;
     }
+    // Prefill a stereo sample, this will make the RX and TX buffers run out at the same time
+    s_hsai_tx.Instance->DR = 0;
+    s_hsai_tx.Instance->DR = 0;
     if (HAL_SAI_Transmit_DMA(&s_hsai_tx, (uint8_t*)s_out_buffer, ARRAY_SIZE(s_out_buffer)) != HAL_OK) {
         return 1;
     }
