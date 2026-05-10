@@ -6,7 +6,7 @@
 #include <stdbool.h>
 #include <limits.h>
 
-#define VOICE_COUNT 3
+#define VOICE_COUNT 2
 
 typedef struct {
     bool active;
@@ -23,10 +23,10 @@ static int s_next_serial_number = 0;  // I don't think it'll overflow soon
 
 static unsigned note_to_dac_value(int note)
 {
-    // DAC output 0..0xfff -> -5 to +5V or so.
-    // Middle C (note 60) ends up around 0V.
-    const float steps_per_note = 0xfff / 10.0f / 12;
-    return steps_per_note * note;
+    // DAC output 0..0xfff -> -5 to +5V or so. Middle C (note 60) ends up around 0V.
+    const float tuning = 1.35f;  // Not sure why this isn't very close to 1.0
+    const float steps_per_note = tuning * 0xfff / 10.0f / 12;
+    return steps_per_note * (note - 12);
 }
 
 static void voice_on(voice_t *voice)
@@ -36,15 +36,14 @@ static void voice_on(voice_t *voice)
     int this_voice_index = 0;
     for (int i = 0; i < 3 && i < VOICE_COUNT; i++) {
         voice_t *v = &s_state.voice[i];
-        if (v->active) {
-            dac[i] = note_to_dac_value(v->note);
-        }
+        dac[i] = note_to_dac_value(v->note);
         if (v == voice) {
             this_voice_index = i;
         }
     }
     analog_out_set(dac[0], dac[1], dac[2]);
     gpio_set(PIN_GATE1 + this_voice_index, true);
+    gpio_set_led(this_voice_index, true);
 }
 
 static void voice_off(voice_t *voice)
@@ -54,15 +53,14 @@ static void voice_off(voice_t *voice)
     int this_voice_index = 0;
     for (int i = 0; i < 3 && i < VOICE_COUNT; i++) {
         voice_t *v = &s_state.voice[i];
-        if (v->active) {
-            dac[i] = note_to_dac_value(v->note);
-        }
+        dac[i] = note_to_dac_value(v->note);
         if (v == voice) {
             this_voice_index = i;
         }
     }
     analog_out_set(dac[0], dac[1], dac[2]);
     gpio_set(PIN_GATE1 + this_voice_index, false);
+    gpio_set_led(this_voice_index, false);
 }
 
 static voice_t *get_next_voice(void)
