@@ -30,6 +30,8 @@ typedef enum {
     AOUT1,
     AOUT2,
     AOUT3,
+    PIN_MIDI_RX,
+    PIN_MIDI_TX,
 } GpioPin;
 
 #define PIN_BUTTON_1 PIN_GPIO7

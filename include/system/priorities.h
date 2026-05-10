@@ -6,4 +6,5 @@
  */
 static const unsigned prio_sai_dma = 0;
 static const unsigned prio_adc_dma = 1;
-static const unsigned prio_log_uart = 2;
+static const unsigned prio_midi_uart = 2;
+static const unsigned prio_log_uart = 3;

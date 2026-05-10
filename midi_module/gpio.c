@@ -31,7 +31,9 @@ static const struct {
     [AIN8] = {GPIOB, {.Pin=GPIO_PIN_15, .Mode=GPIO_MODE_ANALOG}},
     [AOUT1] = {GPIOA, {.Pin=GPIO_PIN_4, .Mode=GPIO_MODE_ANALOG}},
     [AOUT2] = {GPIOA, {.Pin=GPIO_PIN_5, .Mode=GPIO_MODE_ANALOG}},
-    [AOUT3] = {GPIOA, {.Pin=GPIO_PIN_6, .Mode=GPIO_MODE_ANALOG}},    
+    [AOUT3] = {GPIOA, {.Pin=GPIO_PIN_6, .Mode=GPIO_MODE_ANALOG}},
+    [PIN_MIDI_RX] = {GPIOB, {.Pin=GPIO_PIN_11, .Mode=GPIO_MODE_AF_PP, .Alternate=GPIO_AF7_USART3}},
+    [PIN_MIDI_TX] = {GPIOB, {.Pin=GPIO_PIN_10, .Mode=GPIO_MODE_AF_PP, .Alternate=GPIO_AF7_USART3}},
 };
 
 volatile bool led_state[6] = {};

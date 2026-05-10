@@ -7,6 +7,7 @@
 #include "stm32g4xx_hal.h"
 #include "system/serial_log.h"
 #include "gpio.h"
+#include "midi.h"
 #include "system/analog_in.h"
 #include "system/analog_out.h"
 
@@ -49,6 +50,14 @@ int main(void)
     }
     if (analog_out_init() != 0) {
         printf("Error: analog out init failed\r\n");
+        assert(false);
+    }
+    if (midi_init() != 0) {
+        printf("Error: MIDI init failed\r\n");
+        assert(false);
+    }
+    if (midi_start() != 0) {
+        printf("Error: MIDI start failed\r\n");
         assert(false);
     }
 
