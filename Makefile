@@ -1,5 +1,6 @@
 all:
 	$(MAKE) -f lpg_module/lpg_module.mk
+	$(MAKE) -f midi_module/midi_module.mk
 
 clean:
 	rm -rf build/
@@ -7,7 +8,13 @@ clean:
 flash-lpg_module: lpg_module/lpg_module.mk
 	$(MAKE) -f $^ flash
 
+flash-midi_module: midi_module/midi_module.mk
+	$(MAKE) -f $^ flash
+
 dfu-lpg_module: lpg_module/lpg_module.mk
+	$(MAKE) -f $^ dfu
+
+dfu-midi_module: midi_module/midi_module.mk
 	$(MAKE) -f $^ dfu
 
 .PHONY: all clean
