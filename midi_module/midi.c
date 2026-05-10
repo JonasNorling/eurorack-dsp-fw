@@ -3,6 +3,7 @@
 #include "priorities.h"
 #include "gpio.h"
 #include "utils.h"
+#include "voices.h"
 
 #include <stdint.h>
 #include <stdio.h>
@@ -15,7 +16,7 @@ static UART_HandleTypeDef s_huart = {
         .StopBits = UART_STOPBITS_1,
         .Parity = UART_PARITY_NONE,
         .ClockPrescaler = UART_PRESCALER_DIV1,
-        .Mode = USART_MODE_TX_RX,
+        .Mode = USART_MODE_RX,
     },
 };
 
@@ -53,20 +54,20 @@ static void handle(uint8_t b)
         switch (s_state.current_status) {
             case 0x80:  // note off
                 if (s_state.data_pt == 2) {
-                    printf("off %d %d\r\n", s_state.data[0], s_state.data[1]);
+                    voices_note_event(s_state.current_status & 0x0f, s_state.data[0], 0);
                     s_state.data_pt = 0;
                 }
                 break;
             case 0x90:  // note on
                 if (s_state.data_pt == 2) {
-                    printf("on %d %d\r\n", s_state.data[0], s_state.data[1]);
+                    voices_note_event(s_state.current_status & 0x0f, s_state.data[0], s_state.data[1]);
                     s_state.data_pt = 0;
                 }
                 break;
             case 0xe0:  // pitch bend
                 if (s_state.data_pt == 2) {
                     const int16_t bend = ((s_state.data[1] << 7) | s_state.data[0]) - 0x2000;
-                    printf("pb %d\r\n", bend);
+                    voices_pb_event(s_state.current_status & 0x0f, bend);
                     s_state.data_pt = 0;
                 }
                 break;

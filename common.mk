@@ -13,7 +13,7 @@ CPPFLAGS=\
 	-Istm32-cube/Drivers/CMSIS/Device/ST/STM32G4xx/Include \
 	-Istm32-cube/Drivers/BSP/STM32G474E-EVAL
 
-CFLAGS=-mcpu=cortex-m4 -mfloat-abi=hard -mthumb -Wall -Wextra -Werror -g -Og
+CFLAGS=-mcpu=cortex-m4 -mfloat-abi=hard -mthumb -Wall -Wextra -Werror -Wshadow -g -Og
 LDFLAGS=-Wl,-Tsrc/system/STM32G474CCTX_FLASH.ld --specs=nano.specs --specs=nosys.specs
 
 OBJS := $(SRCS:%.c=$(BUILDDIR)/%.o) $(ASM_SRCS:%.s=$(BUILDDIR)/%.o)

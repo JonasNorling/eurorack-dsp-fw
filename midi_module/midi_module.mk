@@ -1,6 +1,7 @@
 SRCS += midi_module/main.c
 SRCS += midi_module/gpio.c
 SRCS += midi_module/midi.c
+SRCS += midi_module/voices.c
 SRCS += src/system/serial_log.c
 SRCS += src/system/analog_in.c
 SRCS += src/system/analog_out.c
