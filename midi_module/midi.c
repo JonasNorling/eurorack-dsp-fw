@@ -26,7 +26,6 @@ typedef struct {
     uint8_t current_status;
     uint8_t data[2];
     size_t data_pt;
-    bool overrun;  // Got too much data
 } midi_parser_state_t;
 
 static midi_parser_state_t s_state;
@@ -37,9 +36,23 @@ static void handle(uint8_t b)
         switch (b & 0xf0) {
             case 0x80:  // note off
             case 0x90:  // note on
+            case 0xb0:  // control change
+            case 0xd0:  // channel aftertouch
             case 0xe0:  // pitch bend
                 s_state.current_status = b;
+                s_state.data_pt = 0;
                 break;
+            case 0xf0:  // System message
+                if ((b & 0x0f) >= 8) {
+                    // Realtime message interspersed in otherwise harmless data
+                    if (b == 0xf8) {  // Clock message, 24 pulses per quarter note
+                        static int pulse_count;
+                        gpio_set_led(5, !(pulse_count % 24));
+                        pulse_count++;
+                    }
+                    break;
+                }
+                // Fall through
             default:
                 s_state.current_status = 0;
         }
@@ -61,6 +74,18 @@ static void handle(uint8_t b)
             case 0x90:  // note on
                 if (s_state.data_pt == 2) {
                     voices_note_event(s_state.current_status & 0x0f, s_state.data[0], s_state.data[1]);
+                    s_state.data_pt = 0;
+                }
+                break;
+            case 0xb0:  // control change
+                if (s_state.data_pt == 2) {
+                    voices_cc_event(s_state.current_status & 0x0f, s_state.data[0], s_state.data[1]);
+                    s_state.data_pt = 0;
+                }
+                break;
+            case 0xd0:  // channel aftertouch
+                if (s_state.data_pt == 2) {
+                    voices_at_event(s_state.current_status & 0x0f, 0, s_state.data[0]);
                     s_state.data_pt = 0;
                 }
                 break;
